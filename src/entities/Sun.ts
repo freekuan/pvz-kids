@@ -99,6 +99,7 @@ export class Sun extends Phaser.GameObjects.Container {
   public collect(onComplete: () => void): void {
     if (this.collected) return;
     this.collected = true;
+    this.disableInteractive();
     this.scene.tweens.killTweensOf(this);
 
     this.scene.tweens.add({

@@ -82,9 +82,21 @@ export class GameScene extends Phaser.Scene {
   private showingFinalWaveWarning: boolean = false;
   private waveSpawnComplete: boolean = false;
   private waveRestPending: boolean = false;
+  private skySunTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  shutdown(): void {
+    this.input.off('pointerdown', this.handlePointerDown, this);
+    this.input.off('pointerup', this.handlePointerUp, this);
+    this.skySunTimer?.remove();
+    this.skySunTimer = undefined;
+    this.sunflowerTimers.forEach((timer) => timer.remove());
+    this.peashooterTimers.forEach((timer) => timer.remove());
+    this.sunflowerTimers.clear();
+    this.peashooterTimers.clear();
   }
 
   init(data: { level: number }): void {
@@ -122,7 +134,10 @@ export class GameScene extends Phaser.Scene {
     const { width, height } = this.cameras.main;
 
     this.input.setTopOnly(true);
+    this.input.off('pointerdown', this.handlePointerDown, this);
     this.input.on('pointerdown', this.handlePointerDown, this);
+    this.input.off('pointerup', this.handlePointerUp, this);
+    this.input.on('pointerup', this.handlePointerUp, this);
 
     this.drawBackdrop(width, height);
 
@@ -138,8 +153,7 @@ export class GameScene extends Phaser.Scene {
     // Create lawn mowers
     this.createLawnMowers();
 
-    // Start sky sun drops
-    this.time.addEvent({
+    this.skySunTimer = this.time.addEvent({
       delay: SKY_SUN_INTERVAL,
       callback: this.dropSkySun,
       callbackScope: this,
@@ -147,6 +161,17 @@ export class GameScene extends Phaser.Scene {
     });
 
     this.scheduleLevelStart();
+    this.refreshSunCounter();
+  }
+
+  private refreshSunCounter(): void {
+    if (this.sunText?.active) {
+      this.sunText.setText(`${this.sunCount}`);
+    }
+  }
+
+  private pointerToWorld(pointer: Phaser.Input.Pointer): { x: number; y: number } {
+    return this.cameras.main.getWorldPoint(pointer.x, pointer.y);
   }
 
   private usesClearBetweenWavesPacing(): boolean {
@@ -232,7 +257,8 @@ export class GameScene extends Phaser.Scene {
         hit.setDepth(2);
         hit.setInteractive();
         hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
-          if (this.tryCollectSunAtPointer(pointer.worldX, pointer.worldY)) {
+          const { x, y } = this.pointerToWorld(pointer);
+          if (this.tryCollectSunAtPointer(x, y)) {
             return;
           }
           this.handleTileClick(row, col);
@@ -594,9 +620,10 @@ export class GameScene extends Phaser.Scene {
     const targetY = Phaser.Math.Between(GRID_START_Y, GRID_START_Y + GRID_ROWS * TILE_HEIGHT);
     
     const sun = new Sun(this, x, startY, SKY_SUN_AMOUNT, true, targetY);
-    sun.on('pointerdown', () => {
-      this.collectSun(sun);
-    });
+    this.registerSun(sun);
+  }
+
+  private registerSun(sun: Sun): void {
     this.suns.push(sun);
   }
 
@@ -611,10 +638,7 @@ export class GameScene extends Phaser.Scene {
         
         const sun = new Sun(this, plant.x, plant.y, SUNFLOWER_SUN_AMOUNT);
         sun.playSunflowerEject();
-        sun.on('pointerdown', () => {
-          this.collectSun(sun);
-        });
-        this.suns.push(sun);
+        this.registerSun(sun);
       },
       callbackScope: this,
       loop: true,
@@ -686,7 +710,14 @@ export class GameScene extends Phaser.Scene {
 
   private handlePointerDown(pointer: Phaser.Input.Pointer): void {
     if (this.gameOver) return;
-    this.tryCollectSunAtPointer(pointer.worldX, pointer.worldY);
+    const { x, y } = this.pointerToWorld(pointer);
+    this.tryCollectSunAtPointer(x, y);
+  }
+
+  private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.gameOver) return;
+    const { x, y } = this.pointerToWorld(pointer);
+    this.tryCollectSunAtPointer(x, y);
   }
 
   private tryCollectSunAtPointer(worldX: number, worldY: number): boolean {
@@ -705,15 +736,15 @@ export class GameScene extends Phaser.Scene {
     if (!sun.active || sun.isCollected()) return;
 
     const value = sun.value;
-    sun.collect(() => {
-      this.sunCount += value;
-      this.sunText.setText(`${this.sunCount}`);
-    });
+    this.sunCount += value;
+    this.refreshSunCounter();
 
     const index = this.suns.indexOf(sun);
     if (index > -1) {
       this.suns.splice(index, 1);
     }
+
+    sun.collect(() => undefined);
   }
 
   private startNextWave(): void {
@@ -739,12 +770,13 @@ export class GameScene extends Phaser.Scene {
   private showFinalWaveWarning(): void {
     const { width, height } = this.cameras.main;
     
-    const warning = this.add.text(width / 2, height / 2, 'FINAL WAVE!', {
-      fontSize: '72px',
+    const warning = this.add.text(width / 2, height / 2, '最后一波', {
+      fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+      fontSize: '80px',
       color: '#FF0000',
       fontStyle: 'bold',
       stroke: '#FFFFFF',
-      strokeThickness: 6,
+      strokeThickness: 8,
     });
     warning.setOrigin(0.5);
     warning.setDepth(1000);
