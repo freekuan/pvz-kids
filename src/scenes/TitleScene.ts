@@ -22,6 +22,20 @@ export class TitleScene extends Phaser.Scene {
     });
     title.setOrigin(0.5);
 
+    const dedicationEn = this.add.text(width / 2, title.y + 72, 'A Game for Zhiyuan', {
+      fontSize: '40px',
+      color: '#2E8B57',
+      align: 'center',
+    });
+    dedicationEn.setOrigin(0.5, 0);
+
+    const dedicationZh = this.add.text(width / 2, dedicationEn.y + 46, '给芷鸢的游戏', {
+      fontSize: '30px',
+      color: '#6B9E6B',
+      align: 'center',
+    });
+    dedicationZh.setOrigin(0.5, 0);
+
     // Subtitle
     const subtitle = this.add.text(width / 2, height / 2, 'Tower Defense Game', {
       fontSize: '32px',
