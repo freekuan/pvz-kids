@@ -6,6 +6,10 @@ export const GRID_START_Y = 200;
 export const HOUSE_CENTER_X = 168;
 export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
+/** Bottom-anchored sprite offset shared by plants, zombies, and mowers. */
+export const ROW_SPRITE_FOOT_OFFSET = 12;
+/** Max on-screen plant size so art sits inside one ~100×100 lawn tile (code scale). */
+export const PLANT_TILE_FIT = 86;
 
 /** Official HUD slices — layout matched to preview-hud reference (source pixels at 1224×202 bar). */
 export const HUD_BAR_SCALE = 0.4;
@@ -29,6 +33,11 @@ export const HUD_BAR_PAD_X = 10;
 export const HUD_ELEMENT_GAP = 8;
 /** Slightly wider packets vs strict art aspect for long English names. */
 export const HUD_PACKET_WIDTH_RATIO = 1.05;
+/** Extra hit slop on seed packets and shovel for tablet taps (pixels per side). */
+export const HUD_PACKET_HIT_PAD_X = 14;
+export const HUD_PACKET_HIT_PAD_Y = 18;
+export const HUD_SHOVEL_HIT_PAD_X = 16;
+export const HUD_SHOVEL_HIT_PAD_Y = 20;
 
 // Game balance
 export const INITIAL_SUN = 150;
@@ -122,6 +131,10 @@ export const ZOMBIE_TYPES: Record<string, ZombieData> = {
 // Projectile
 export const PEA_DAMAGE = 20;
 export const PEA_SPEED = 300;
+/** Pea sprite display size and mouth offset along scaled peashooter art (fractions of display size). */
+export const PEA_DISPLAY_SIZE = 22;
+export const PEASHOOTER_MOUTH_X_RATIO = 0.36;
+export const PEASHOOTER_MOUTH_Y_RATIO = 0.56;
 
 // Cherry bomb
 export const CHERRY_DAMAGE = 1800;

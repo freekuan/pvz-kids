@@ -38,6 +38,10 @@ import {
   HUD_BAR_PAD_X,
   HUD_ELEMENT_GAP,
   HUD_PACKET_WIDTH_RATIO,
+  HUD_PACKET_HIT_PAD_X,
+  HUD_PACKET_HIT_PAD_Y,
+  HUD_SHOVEL_HIT_PAD_X,
+  HUD_SHOVEL_HIT_PAD_Y,
 } from '../config/constants';
 import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
 
@@ -362,7 +366,9 @@ export class GameScene extends Phaser.Scene {
       highlight.setFillStyle(0x000000, 0);
       card.add(highlight);
 
-      const hit = this.add.zone(0, 0, layout.packetW, layout.packetH);
+      const hitW = layout.packetW + HUD_PACKET_HIT_PAD_X * 2;
+      const hitH = layout.packetH + HUD_PACKET_HIT_PAD_Y * 2;
+      const hit = this.add.zone(0, 0, hitW, hitH);
       hit.setInteractive({ useHandCursor: true });
       const selectedType = plantType;
       hit.on('pointerdown', () => {
@@ -387,7 +393,9 @@ export class GameScene extends Phaser.Scene {
       shovelCard.add(shovel);
     }
 
-    const shovelHit = this.add.zone(0, 0, layout.shovelW, layout.shovelH);
+    const shovelHitW = layout.shovelW + HUD_SHOVEL_HIT_PAD_X * 2;
+    const shovelHitH = layout.shovelH + HUD_SHOVEL_HIT_PAD_Y * 2;
+    const shovelHit = this.add.zone(0, 0, shovelHitW, shovelHitH);
     shovelHit.setInteractive({ useHandCursor: true });
     shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
@@ -571,8 +579,17 @@ export class GameScene extends Phaser.Scene {
         const hasZombieInLane = this.zombies.some(z => z.row === plant.row && z.x > plant.x);
         
         if (hasZombieInLane) {
-          const projectile = new Projectile(this, plant.x + 40, plant.y, plant.row);
-          this.projectiles.push(projectile);
+          const spawn = plant.getPeaSpawn();
+          if (spawn) {
+            const projectile = new Projectile(
+              this,
+              spawn.worldX,
+              spawn.rowY,
+              plant.row,
+              spawn.peaOffsetY
+            );
+            this.projectiles.push(projectile);
+          }
         }
       },
       callbackScope: this,

@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { PEA_SPEED, PEA_DAMAGE } from '../config/constants';
+import { PEA_SPEED, PEA_DAMAGE, PEA_DISPLAY_SIZE } from '../config/constants';
 import { ASSET_MANIFEST } from '../config/assets';
 
 export class Projectile extends Phaser.GameObjects.Container {
@@ -8,24 +8,33 @@ export class Projectile extends Phaser.GameObjects.Container {
   private sprite?: Phaser.GameObjects.Image;
   private graphics?: Phaser.GameObjects.Graphics;
 
-  constructor(scene: Phaser.Scene, x: number, y: number, row: number) {
-    super(scene, x, y);
+  constructor(
+    scene: Phaser.Scene,
+    x: number,
+    rowY: number,
+    row: number,
+    peaOffsetY: number = 0
+  ) {
+    super(scene, x, rowY);
 
     this.row = row;
     this.damage = PEA_DAMAGE;
 
     const peaKey = ASSET_MANIFEST.pea.key;
     if (scene.textures.exists(peaKey)) {
-      this.sprite = scene.add.image(0, 0, peaKey);
-      const scale = 22 / Math.max(this.sprite.width, this.sprite.height);
+      this.sprite = scene.add.image(0, peaOffsetY, peaKey);
+      this.sprite.setOrigin(0.5, 0.5);
+      const scale = PEA_DISPLAY_SIZE / Math.max(this.sprite.width, this.sprite.height);
       this.sprite.setScale(scale);
       this.add(this.sprite);
     } else {
       this.graphics = scene.add.graphics();
       this.graphics.fillStyle(0x90ee90, 1);
-      this.graphics.fillCircle(0, 0, 8);
+      this.graphics.fillCircle(0, peaOffsetY, 8);
       this.add(this.graphics);
     }
+
+    this.setDepth(5);
 
     scene.add.existing(this);
   }
