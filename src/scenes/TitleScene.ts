@@ -8,15 +8,19 @@ const DEDICATION_EN_Y = 312;
 const DEDICATION_ZH_Y = 362;
 const START_BTN = { x: CENTER_X, y: 458, width: 340, height: 92 };
 
+/** Max line width for copy kept in the center lawn (between side characters). */
+const CENTER_TEXT_WRAP = 380;
+
 const titleTextStyle: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
-  fontSize: '62px',
+  fontSize: '46px',
   color: '#2dad2d',
   fontStyle: 'bold',
   align: 'center',
   stroke: '#ffffff',
-  strokeThickness: 10,
+  strokeThickness: 8,
   shadow: { offsetX: 2, offsetY: 3, color: '#1a5c1a', blur: 4, fill: true },
+  wordWrap: { width: CENTER_TEXT_WRAP, useAdvancedWrap: true },
 };
 
 const dedicationEnStyle: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -52,13 +56,12 @@ export class TitleScene extends Phaser.Scene {
       this.add.rectangle(width / 2, height / 2, width, height, 0x87ceeb);
     }
 
-    const signPanel = this.add.graphics();
-    signPanel.fillStyle(0xfff8e7, 0.78);
-    signPanel.lineStyle(4, 0x8b5a2b, 0.85);
-    signPanel.fillRoundedRect(CENTER_X - 310, 155, 620, 360, 24);
-    signPanel.strokeRoundedRect(CENTER_X - 310, 155, 620, 360, 24);
-
-    const title = this.add.text(CENTER_X, TITLE_Y, 'Plants vs Zombies Kids', titleTextStyle);
+    const title = this.add.text(
+      CENTER_X,
+      TITLE_Y,
+      'Plants vs Zombies\nKids',
+      titleTextStyle
+    );
     title.setOrigin(0.5);
 
     const dedicationEn = this.add.text(CENTER_X, DEDICATION_EN_Y, 'A Game for Zhiyuan', dedicationEnStyle);
@@ -99,6 +102,6 @@ export class TitleScene extends Phaser.Scene {
     });
 
     // Lift UI above background art.
-    [signPanel, title, dedicationEn, dedicationZh, btn, startLabel].forEach((obj) => obj.setDepth(2));
+    [title, dedicationEn, dedicationZh, btn, startLabel].forEach((obj) => obj.setDepth(2));
   }
 }
