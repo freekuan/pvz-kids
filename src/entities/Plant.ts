@@ -3,15 +3,11 @@ import {
   PLANT_TYPES,
   ROW_SPRITE_FOOT_OFFSET,
   PLANT_TILE_FIT,
-  PLANT_TILE_FIT_LABELLED,
   TILE_WIDTH,
   PEASHOOTER_MOUTH_X_OF_WIDTH,
   PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP,
 } from '../config/constants';
 import { PLANT_TEXTURE_KEYS } from '../config/assets';
-
-/** Sunflower/peashooter PNGs still include baked name labels until design re-exports. */
-const LABELLED_PLANT_TYPES = new Set(['sunflower', 'peashooter']);
 
 export class Plant extends Phaser.GameObjects.Container {
   public plantType: string;
@@ -39,13 +35,12 @@ export class Plant extends Phaser.GameObjects.Container {
     if (textureKey && scene.textures.exists(textureKey)) {
       this.sprite = scene.add.image(0, ROW_SPRITE_FOOT_OFFSET, textureKey);
       this.sprite.setOrigin(0.5, 1);
-      const tileFit = LABELLED_PLANT_TYPES.has(plantType)
-        ? PLANT_TILE_FIT_LABELLED
-        : PLANT_TILE_FIT;
-      const scale = Math.min(
-        tileFit / this.sprite.height,
-        (TILE_WIDTH - 10) / this.sprite.width
-      );
+      const heightScale = PLANT_TILE_FIT / this.sprite.height;
+      const widthScale = (TILE_WIDTH - 10) / this.sprite.width;
+      const scale =
+        plantType === 'peashooter'
+          ? heightScale
+          : Math.min(heightScale, widthScale);
       this.sprite.setScale(scale);
       this.plantSpriteHeight = this.sprite.displayHeight;
       this.add(this.sprite);

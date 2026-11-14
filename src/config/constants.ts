@@ -8,10 +8,8 @@ export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
 /** Bottom-anchored sprite offset shared by plants, zombies, and mowers. */
 export const ROW_SPRITE_FOOT_OFFSET = 12;
-/** Max on-screen plant size so art sits inside one ~100×100 lawn tile (code scale). */
+/** Target display height for planted sprites inside one ~100×100 lawn tile. */
 export const PLANT_TILE_FIT = 86;
-/** Temporary tighter scale for art that still has baked-in name labels at the bottom. */
-export const PLANT_TILE_FIT_LABELLED = 76;
 
 /** Official HUD slices — layout matched to preview-hud reference (source pixels at 1224×202 bar). */
 export const HUD_BAR_SCALE = 0.4;
@@ -135,9 +133,9 @@ export const PEA_DAMAGE = 20;
 export const PEA_SPEED = 300;
 /** Pea sprite display size. */
 export const PEA_DISPLAY_SIZE = 22;
-/** Mouth position on peashooter.png (199×268), measured from sprite center / top. */
-export const PEASHOOTER_MOUTH_X_OF_WIDTH = 0.288;
-export const PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP = 0.416;
+/** Mouth position on peashooter.png (528×512), measured from sprite center / top. */
+export const PEASHOOTER_MOUTH_X_OF_WIDTH = 0.332;
+export const PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP = 0.408;
 export const SUN_COLLECT_HIT_RADIUS = 48;
 export const SUN_DEPTH = 50;
 
