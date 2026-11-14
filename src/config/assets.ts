@@ -1,6 +1,6 @@
 /** Designer art paths (under `public/`) and Phaser texture keys. */
 export const ASSET_MANIFEST = {
-  titleScreen: { key: 'title_bg', url: 'assets/backgrounds/title_bg.png' },
+  titleScreen: { key: 'title_bg', url: 'assets/backgrounds/title_bg.jpg' },
   houseSidewalk: { key: 'house_sidewalk', url: 'assets/backgrounds/house_sidewalk.jpg' },
   lawnLight: { key: 'lawn_light', url: 'assets/backgrounds/lawn_light.jpg' },
   lawnDark: { key: 'lawn_dark', url: 'assets/backgrounds/lawn_dark.jpg' },
