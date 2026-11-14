@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { SUN_COLLECT_HIT_RADIUS, SUN_DEPTH } from '../config/constants';
 import { ASSET_MANIFEST } from '../config/assets';
 
 const COLLECTIBLE_SUN_SIZE = 52;
@@ -31,21 +32,29 @@ export class Sun extends Phaser.GameObjects.Container {
       this.add(this.graphics);
     }
 
-    const hitRadius = 34;
-    this.setInteractive({
-      hitArea: new Phaser.Geom.Circle(0, 0, hitRadius),
-      hitAreaCallback: Phaser.Geom.Circle.Contains,
-      useHandCursor: true,
-    });
-    this.setDepth(20);
+    this.setDepth(SUN_DEPTH);
 
     scene.add.existing(this);
 
+    this.setInteractive({
+      hitArea: new Phaser.Geom.Circle(0, 0, SUN_COLLECT_HIT_RADIUS),
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+      useHandCursor: true,
+      draggable: false,
+    });
     scene.time.delayedCall(8000, () => {
       if (!this.collected) {
         this.fadeOut();
       }
     });
+  }
+
+  public isCollected(): boolean {
+    return this.collected;
+  }
+
+  public containsWorldPoint(worldX: number, worldY: number): boolean {
+    return Phaser.Math.Distance.Between(worldX, worldY, this.x, this.y) <= SUN_COLLECT_HIT_RADIUS;
   }
 
   private drawSunFallback(): void {
@@ -90,6 +99,7 @@ export class Sun extends Phaser.GameObjects.Container {
   public collect(onComplete: () => void): void {
     if (this.collected) return;
     this.collected = true;
+    this.disableInteractive();
     this.scene.tweens.killTweensOf(this);
 
     this.scene.tweens.add({

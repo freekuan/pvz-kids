@@ -1,8 +1,13 @@
 import Phaser from 'phaser';
-import { PLANT_TYPES } from '../config/constants';
+import {
+  PLANT_TYPES,
+  ROW_SPRITE_FOOT_OFFSET,
+  PLANT_TILE_FIT,
+  TILE_WIDTH,
+  PEASHOOTER_MOUTH_X_OF_WIDTH,
+  PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP,
+} from '../config/constants';
 import { PLANT_TEXTURE_KEYS } from '../config/assets';
-
-const TARGET_PLANT_HEIGHT = 92;
 
 export class Plant extends Phaser.GameObjects.Container {
   public plantType: string;
@@ -13,6 +18,7 @@ export class Plant extends Phaser.GameObjects.Container {
   private sprite?: Phaser.GameObjects.Image;
   private graphics?: Phaser.GameObjects.Graphics;
   private hpBar: Phaser.GameObjects.Graphics;
+  private plantSpriteHeight: number = PLANT_TILE_FIT;
 
   constructor(scene: Phaser.Scene, x: number, y: number, plantType: string, row: number, col: number) {
     super(scene, x, y);
@@ -27,10 +33,16 @@ export class Plant extends Phaser.GameObjects.Container {
 
     const textureKey = PLANT_TEXTURE_KEYS[plantType];
     if (textureKey && scene.textures.exists(textureKey)) {
-      this.sprite = scene.add.image(0, 10, textureKey);
+      this.sprite = scene.add.image(0, ROW_SPRITE_FOOT_OFFSET, textureKey);
       this.sprite.setOrigin(0.5, 1);
-      const scale = TARGET_PLANT_HEIGHT / this.sprite.height;
+      const heightScale = PLANT_TILE_FIT / this.sprite.height;
+      const widthScale = (TILE_WIDTH - 10) / this.sprite.width;
+      const scale =
+        plantType === 'peashooter'
+          ? heightScale
+          : Math.min(heightScale, widthScale);
       this.sprite.setScale(scale);
+      this.plantSpriteHeight = this.sprite.displayHeight;
       this.add(this.sprite);
     } else {
       this.graphics = scene.add.graphics();
@@ -42,7 +54,24 @@ export class Plant extends Phaser.GameObjects.Container {
     this.add(this.hpBar);
     this.updateHpBar();
 
+    this.setDepth(4);
+
     scene.add.existing(this);
+  }
+
+  /** World position at the peashooter snout opening (right-side barrel). */
+  public getPeaSpawn(): { worldX: number; worldY: number } | null {
+    if (this.plantType !== 'peashooter' || !this.sprite) return null;
+
+    const dw = this.sprite.displayWidth;
+    const dh = this.sprite.displayHeight;
+    const mouthLocalX = dw * PEASHOOTER_MOUTH_X_OF_WIDTH;
+    const mouthLocalY = ROW_SPRITE_FOOT_OFFSET - dh * PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP;
+
+    return {
+      worldX: this.x + mouthLocalX,
+      worldY: this.y + mouthLocalY,
+    };
   }
 
   private drawPlantFallback(): void {
@@ -52,20 +81,20 @@ export class Plant extends Phaser.GameObjects.Container {
     switch (this.plantType) {
       case 'sunflower':
         this.graphics.fillStyle(0xffd700, 1);
-        this.graphics.fillCircle(0, 0, 35);
+        this.graphics.fillCircle(0, 0, 30);
         break;
       case 'peashooter':
         this.graphics.fillStyle(0x228b22, 1);
-        this.graphics.fillCircle(0, 0, 35);
+        this.graphics.fillCircle(0, 0, 30);
         break;
       case 'wallnut':
         this.graphics.fillStyle(0x8b4513, 1);
-        this.graphics.fillRoundedRect(-35, -35, 70, 70, 10);
+        this.graphics.fillRoundedRect(-30, -30, 60, 60, 10);
         break;
       case 'cherrybomb':
         this.graphics.fillStyle(0xff0000, 1);
-        this.graphics.fillCircle(-15, 0, 25);
-        this.graphics.fillCircle(15, 0, 25);
+        this.graphics.fillCircle(-12, 0, 22);
+        this.graphics.fillCircle(12, 0, 22);
         break;
     }
   }
@@ -77,7 +106,7 @@ export class Plant extends Phaser.GameObjects.Container {
       const barWidth = 60;
       const barHeight = 6;
       const hpPercent = this.hp / this.maxHp;
-      const barY = this.sprite ? -TARGET_PLANT_HEIGHT - 8 : -50;
+      const barY = this.sprite ? -this.plantSpriteHeight - 8 : -50;
 
       this.hpBar.fillStyle(0x000000, 0.5);
       this.hpBar.fillRect(-barWidth / 2, barY, barWidth, barHeight);

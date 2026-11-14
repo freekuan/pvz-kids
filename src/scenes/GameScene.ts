@@ -38,6 +38,10 @@ import {
   HUD_BAR_PAD_X,
   HUD_ELEMENT_GAP,
   HUD_PACKET_WIDTH_RATIO,
+  HUD_PACKET_HIT_PAD_X,
+  HUD_PACKET_HIT_PAD_Y,
+  HUD_SHOVEL_HIT_PAD_X,
+  HUD_SHOVEL_HIT_PAD_Y,
 } from '../config/constants';
 import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
 
@@ -76,9 +80,23 @@ export class GameScene extends Phaser.Scene {
   
   private gameOver: boolean = false;
   private showingFinalWaveWarning: boolean = false;
+  private waveSpawnComplete: boolean = false;
+  private waveRestPending: boolean = false;
+  private skySunTimer?: Phaser.Time.TimerEvent;
 
   constructor() {
     super({ key: 'GameScene' });
+  }
+
+  shutdown(): void {
+    this.input.off('pointerdown', this.handlePointerDown, this);
+    this.input.off('pointerup', this.handlePointerUp, this);
+    this.skySunTimer?.remove();
+    this.skySunTimer = undefined;
+    this.sunflowerTimers.forEach((timer) => timer.remove());
+    this.peashooterTimers.forEach((timer) => timer.remove());
+    this.sunflowerTimers.clear();
+    this.peashooterTimers.clear();
   }
 
   init(data: { level: number }): void {
@@ -99,6 +117,8 @@ export class GameScene extends Phaser.Scene {
     this.peashooterTimers.clear();
     this.gameOver = false;
     this.showingFinalWaveWarning = false;
+    this.waveSpawnComplete = false;
+    this.waveRestPending = false;
     
     // Initialize grid
     this.grid = [];
@@ -112,6 +132,12 @@ export class GameScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.cameras.main;
+
+    this.input.setTopOnly(true);
+    this.input.off('pointerdown', this.handlePointerDown, this);
+    this.input.on('pointerdown', this.handlePointerDown, this);
+    this.input.off('pointerup', this.handlePointerUp, this);
+    this.input.on('pointerup', this.handlePointerUp, this);
 
     this.drawBackdrop(width, height);
 
@@ -127,17 +153,73 @@ export class GameScene extends Phaser.Scene {
     // Create lawn mowers
     this.createLawnMowers();
 
-    // Start sky sun drops
-    this.time.addEvent({
+    this.skySunTimer = this.time.addEvent({
       delay: SKY_SUN_INTERVAL,
       callback: this.dropSkySun,
       callbackScope: this,
       loop: true,
     });
 
-    // Start first wave after delay
-    this.time.delayedCall(3000, () => {
-      this.startNextWave();
+    this.scheduleLevelStart();
+    this.refreshSunCounter();
+  }
+
+  private refreshSunCounter(): void {
+    if (this.sunText?.active) {
+      this.sunText.setText(`${this.sunCount}`);
+    }
+  }
+
+  private pointerToWorld(pointer: Phaser.Input.Pointer): { x: number; y: number } {
+    return this.cameras.main.getWorldPoint(pointer.x, pointer.y);
+  }
+
+  private usesClearBetweenWavesPacing(): boolean {
+    return (
+      this.currentLevel.prepTimeMs !== undefined &&
+      this.currentLevel.restTimeMs !== undefined
+    );
+  }
+
+  private scheduleLevelStart(): void {
+    const prepMs = this.usesClearBetweenWavesPacing()
+      ? this.currentLevel.prepTimeMs!
+      : 3_000;
+
+    this.time.delayedCall(prepMs, () => {
+      if (this.gameOver) return;
+      if (this.usesClearBetweenWavesPacing()) {
+        this.showZombiesComingBanner(() => this.startNextWave());
+      } else {
+        this.startNextWave();
+      }
+    });
+  }
+
+  private showZombiesComingBanner(onComplete: () => void): void {
+    const { width, height } = this.cameras.main;
+
+    const banner = this.add.text(width / 2, height / 2, '僵尸来了', {
+      fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+      fontSize: '80px',
+      color: '#ff4444',
+      fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 8,
+    });
+    banner.setOrigin(0.5);
+    banner.setDepth(1000);
+
+    this.tweens.add({
+      targets: banner,
+      scale: { from: 0.6, to: 1.1 },
+      alpha: { from: 1, to: 0 },
+      duration: 2200,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        banner.destroy();
+        onComplete();
+      },
     });
   }
 
@@ -172,8 +254,13 @@ export class GameScene extends Phaser.Scene {
         }
 
         const hit = this.add.zone(x, y, TILE_WIDTH, TILE_HEIGHT);
+        hit.setDepth(2);
         hit.setInteractive();
-        hit.on('pointerdown', () => {
+        hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          const { x, y } = this.pointerToWorld(pointer);
+          if (this.tryCollectSunAtPointer(x, y)) {
+            return;
+          }
           this.handleTileClick(row, col);
         });
       }
@@ -362,7 +449,9 @@ export class GameScene extends Phaser.Scene {
       highlight.setFillStyle(0x000000, 0);
       card.add(highlight);
 
-      const hit = this.add.zone(0, 0, layout.packetW, layout.packetH);
+      const hitW = layout.packetW + HUD_PACKET_HIT_PAD_X * 2;
+      const hitH = layout.packetH + HUD_PACKET_HIT_PAD_Y * 2;
+      const hit = this.add.zone(0, 0, hitW, hitH);
       hit.setInteractive({ useHandCursor: true });
       const selectedType = plantType;
       hit.on('pointerdown', () => {
@@ -387,7 +476,9 @@ export class GameScene extends Phaser.Scene {
       shovelCard.add(shovel);
     }
 
-    const shovelHit = this.add.zone(0, 0, layout.shovelW, layout.shovelH);
+    const shovelHitW = layout.shovelW + HUD_SHOVEL_HIT_PAD_X * 2;
+    const shovelHitH = layout.shovelH + HUD_SHOVEL_HIT_PAD_Y * 2;
+    const shovelHit = this.add.zone(0, 0, shovelHitW, shovelHitH);
     shovelHit.setInteractive({ useHandCursor: true });
     shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
@@ -529,9 +620,10 @@ export class GameScene extends Phaser.Scene {
     const targetY = Phaser.Math.Between(GRID_START_Y, GRID_START_Y + GRID_ROWS * TILE_HEIGHT);
     
     const sun = new Sun(this, x, startY, SKY_SUN_AMOUNT, true, targetY);
-    sun.on('pointerdown', () => {
-      this.collectSun(sun);
-    });
+    this.registerSun(sun);
+  }
+
+  private registerSun(sun: Sun): void {
     this.suns.push(sun);
   }
 
@@ -546,10 +638,7 @@ export class GameScene extends Phaser.Scene {
         
         const sun = new Sun(this, plant.x, plant.y, SUNFLOWER_SUN_AMOUNT);
         sun.playSunflowerEject();
-        sun.on('pointerdown', () => {
-          this.collectSun(sun);
-        });
-        this.suns.push(sun);
+        this.registerSun(sun);
       },
       callbackScope: this,
       loop: true,
@@ -571,8 +660,16 @@ export class GameScene extends Phaser.Scene {
         const hasZombieInLane = this.zombies.some(z => z.row === plant.row && z.x > plant.x);
         
         if (hasZombieInLane) {
-          const projectile = new Projectile(this, plant.x + 40, plant.y, plant.row);
-          this.projectiles.push(projectile);
+          const spawn = plant.getPeaSpawn();
+          if (spawn) {
+            const projectile = new Projectile(
+              this,
+              spawn.worldX,
+              spawn.worldY,
+              plant.row
+            );
+            this.projectiles.push(projectile);
+          }
         }
       },
       callbackScope: this,
@@ -611,16 +708,43 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.gameOver) return;
+    const { x, y } = this.pointerToWorld(pointer);
+    this.tryCollectSunAtPointer(x, y);
+  }
+
+  private handlePointerUp(pointer: Phaser.Input.Pointer): void {
+    if (this.gameOver) return;
+    const { x, y } = this.pointerToWorld(pointer);
+    this.tryCollectSunAtPointer(x, y);
+  }
+
+  private tryCollectSunAtPointer(worldX: number, worldY: number): boolean {
+    for (let i = this.suns.length - 1; i >= 0; i--) {
+      const sun = this.suns[i];
+      if (!sun.active || sun.isCollected()) continue;
+      if (sun.containsWorldPoint(worldX, worldY)) {
+        this.collectSun(sun);
+        return true;
+      }
+    }
+    return false;
+  }
+
   private collectSun(sun: Sun): void {
-    sun.collect(() => {
-      this.sunCount += sun.value;
-      this.sunText.setText(`${this.sunCount}`);
-    });
-    
+    if (!sun.active || sun.isCollected()) return;
+
+    const value = sun.value;
+    this.sunCount += value;
+    this.refreshSunCounter();
+
     const index = this.suns.indexOf(sun);
     if (index > -1) {
       this.suns.splice(index, 1);
     }
+
+    sun.collect(() => undefined);
   }
 
   private startNextWave(): void {
@@ -636,6 +760,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.waveInProgress = true;
+    this.waveSpawnComplete = false;
     this.waveStartTime = this.time.now;
     this.zombiesSpawnedInWave.clear();
 
@@ -645,12 +770,13 @@ export class GameScene extends Phaser.Scene {
   private showFinalWaveWarning(): void {
     const { width, height } = this.cameras.main;
     
-    const warning = this.add.text(width / 2, height / 2, 'FINAL WAVE!', {
-      fontSize: '72px',
+    const warning = this.add.text(width / 2, height / 2, '最后一波', {
+      fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+      fontSize: '80px',
       color: '#FF0000',
       fontStyle: 'bold',
       stroke: '#FFFFFF',
-      strokeThickness: 6,
+      strokeThickness: 8,
     });
     warning.setOrigin(0.5);
     warning.setDepth(1000);
@@ -682,15 +808,36 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    // Check if wave is complete
     if (this.zombiesSpawnedInWave.size === currentWave.length) {
       this.waveInProgress = false;
-      
-      // Start next wave after delay
-      this.time.delayedCall(15000, () => {
-        this.startNextWave();
-      });
+      this.waveSpawnComplete = true;
+
+      if (this.usesClearBetweenWavesPacing()) {
+        this.tryScheduleRestBetweenWaves();
+      } else if (this.currentWaveIndex < this.currentLevel.waves.length) {
+        this.time.delayedCall(15_000, () => {
+          this.startNextWave();
+        });
+      }
     }
+  }
+
+  private tryScheduleRestBetweenWaves(): void {
+    if (!this.usesClearBetweenWavesPacing()) return;
+    if (!this.waveSpawnComplete || this.waveRestPending) return;
+    if (this.zombies.length > 0) return;
+    if (this.currentWaveIndex >= this.currentLevel.waves.length) return;
+
+    this.waveRestPending = true;
+    const restMs = this.currentLevel.restTimeMs!;
+
+    this.time.delayedCall(restMs, () => {
+      this.waveRestPending = false;
+      this.waveSpawnComplete = false;
+      if (!this.gameOver) {
+        this.startNextWave();
+      }
+    });
   }
 
   private spawnZombie(zombieType: string, lane: number): void {
@@ -769,8 +916,9 @@ export class GameScene extends Phaser.Scene {
       // Check collision with zombies
       this.zombies.forEach(zombie => {
         if (zombie.row === projectile.row) {
-          const distance = Phaser.Math.Distance.Between(projectile.x, projectile.y, zombie.x, zombie.y);
-          if (distance < 40) {
+          const dx = Math.abs(zombie.x - projectile.x);
+          const dy = Math.abs(zombie.y - projectile.y);
+          if (dx < 42 && dy < 58) {
             zombie.takeDamage(projectile.damage);
             projectile.destroy();
           }
@@ -801,10 +949,17 @@ export class GameScene extends Phaser.Scene {
     this.suns = this.suns.filter(s => s.active);
     this.mowers = this.mowers.filter(m => m.active);
 
+    if (this.usesClearBetweenWavesPacing()) {
+      this.tryScheduleRestBetweenWaves();
+    }
+
     // Check win condition
-    if (!this.waveInProgress && 
-        this.currentWaveIndex >= this.currentLevel.waves.length && 
-        this.zombies.length === 0) {
+    if (
+      !this.waveInProgress &&
+      this.waveSpawnComplete &&
+      this.currentWaveIndex >= this.currentLevel.waves.length &&
+      this.zombies.length === 0
+    ) {
       this.winGame();
     }
   }

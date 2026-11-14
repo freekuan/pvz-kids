@@ -9,88 +9,72 @@ export interface LevelConfig {
   name: string;
   waves: Wave[][];
   availablePlants: string[];
+  /** Ms of prep before the first wave (levels 1–3 use clear-between-waves pacing). */
+  prepTimeMs?: number;
+  /** Ms rest after a wave is fully spawned and all its zombies are dead. */
+  restTimeMs?: number;
 }
 
 export const LEVELS: LevelConfig[] = [
   {
     level: 1,
     name: 'Level 1',
+    prepTimeMs: 30_000,
+    restTimeMs: 10_000,
     availablePlants: ['sunflower', 'peashooter'],
     waves: [
-      [
-        { zombieType: 'normal', lane: 2, delay: 0 },
-      ],
+      [{ zombieType: 'normal', lane: 2, delay: 0 }],
       [
         { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'normal', lane: 3, delay: 2000 },
+        { zombieType: 'normal', lane: 3, delay: 8_000 },
       ],
       [
         { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 2, delay: 1000 },
-        { zombieType: 'normal', lane: 4, delay: 2000 },
+        { zombieType: 'normal', lane: 2, delay: 5_000 },
+        { zombieType: 'normal', lane: 4, delay: 10_000 },
       ],
     ],
   },
   {
     level: 2,
     name: 'Level 2',
+    prepTimeMs: 25_000,
+    restTimeMs: 8_000,
     availablePlants: ['sunflower', 'peashooter', 'wallnut'],
     waves: [
+      [{ zombieType: 'normal', lane: 2, delay: 0 }],
       [
         { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'normal', lane: 3, delay: 0 },
+        { zombieType: 'conehead', lane: 3, delay: 8_000 },
       ],
       [
         { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 2, delay: 1000 },
-        { zombieType: 'normal', lane: 4, delay: 2000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'normal', lane: 2, delay: 500 },
-        { zombieType: 'conehead', lane: 3, delay: 1000 },
-        { zombieType: 'normal', lane: 4, delay: 1500 },
-      ],
-      [
-        { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 2, delay: 1000 },
-        { zombieType: 'normal', lane: 1, delay: 2000 },
-        { zombieType: 'normal', lane: 3, delay: 2500 },
+        { zombieType: 'normal', lane: 2, delay: 6_000 },
+        { zombieType: 'conehead', lane: 4, delay: 12_000 },
       ],
     ],
   },
   {
     level: 3,
     name: 'Level 3',
+    prepTimeMs: 25_000,
+    restTimeMs: 8_000,
     availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb'],
     waves: [
+      [{ zombieType: 'normal', lane: 2, delay: 0 }],
       [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 4, delay: 0 },
-      ],
-      [
-        { zombieType: 'conehead', lane: 2, delay: 0 },
-        { zombieType: 'normal', lane: 1, delay: 1000 },
-        { zombieType: 'normal', lane: 3, delay: 1000 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 2, delay: 0 },
-        { zombieType: 'conehead', lane: 1, delay: 1000 },
-        { zombieType: 'conehead', lane: 3, delay: 1000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'normal', lane: 3, delay: 1500 },
-        { zombieType: 'normal', lane: 4, delay: 2000 },
+        { zombieType: 'normal', lane: 1, delay: 0 },
+        { zombieType: 'conehead', lane: 3, delay: 8_000 },
       ],
       [
         { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'conehead', lane: 3, delay: 1500 },
-        { zombieType: 'conehead', lane: 4, delay: 2000 },
+        { zombieType: 'buckethead', lane: 2, delay: 10_000 },
+      ],
+      [
+        { zombieType: 'normal', lane: 1, delay: 0 },
+        { zombieType: 'normal', lane: 3, delay: 6_000 },
+        { zombieType: 'conehead', lane: 4, delay: 12_000 },
+        { zombieType: 'buckethead', lane: 0, delay: 18_000 },
       ],
     ],
   },
