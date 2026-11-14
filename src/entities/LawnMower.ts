@@ -16,7 +16,8 @@ export class LawnMower extends Phaser.GameObjects.Container {
 
     const mowerKey = ASSET_MANIFEST.lawnmower.key;
     if (scene.textures.exists(mowerKey)) {
-      this.sprite = scene.add.image(0, 0, mowerKey);
+      this.sprite = scene.add.image(0, 12, mowerKey);
+      this.sprite.setOrigin(0.5, 1);
       const scale = 56 / Math.max(this.sprite.width, this.sprite.height);
       this.sprite.setScale(scale);
       this.add(this.sprite);
@@ -33,7 +34,7 @@ export class LawnMower extends Phaser.GameObjects.Container {
     if (!this.graphics) return;
     this.graphics.clear();
     this.graphics.fillStyle(0xff0000, 1);
-    this.graphics.fillRect(-30, -15, 60, 30);
+    this.graphics.fillRect(-30, -18, 60, 30);
   }
 
   public activate(): void {

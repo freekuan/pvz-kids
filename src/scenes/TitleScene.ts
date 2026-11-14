@@ -8,19 +8,15 @@ const DEDICATION_EN_Y = 312;
 const DEDICATION_ZH_Y = 362;
 const START_BTN = { x: CENTER_X, y: 458, width: 340, height: 92 };
 
-/** Max line width for copy kept in the center lawn (between side characters). */
-const CENTER_TEXT_WRAP = 380;
-
 const titleTextStyle: Phaser.Types.GameObjects.Text.TextStyle = {
   fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
-  fontSize: '46px',
+  fontSize: '42px',
   color: '#2dad2d',
   fontStyle: 'bold',
   align: 'center',
   stroke: '#ffffff',
   strokeThickness: 8,
   shadow: { offsetX: 2, offsetY: 3, color: '#1a5c1a', blur: 4, fill: true },
-  wordWrap: { width: CENTER_TEXT_WRAP, useAdvancedWrap: true },
 };
 
 const dedicationEnStyle: Phaser.Types.GameObjects.Text.TextStyle = {
@@ -59,7 +55,7 @@ export class TitleScene extends Phaser.Scene {
     const title = this.add.text(
       CENTER_X,
       TITLE_Y,
-      'Plants vs Zombies\nKids',
+      'Plants vs Zombies Kids',
       titleTextStyle
     );
     title.setOrigin(0.5);
