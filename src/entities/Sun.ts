@@ -66,6 +66,29 @@ export class Sun extends Phaser.GameObjects.Container {
     this.graphics.strokePath();
   }
 
+  /** Classic PvZ: pop at the plant, arc up, then drop a short way and rest. */
+  public playSunflowerEject(): void {
+    const originY = this.y;
+    const peakY = originY - 62;
+    const restY = originY - 18;
+
+    this.scene.tweens.add({
+      targets: this,
+      y: peakY,
+      duration: 380,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (this.collected || !this.active) return;
+        this.scene.tweens.add({
+          targets: this,
+          y: restY,
+          duration: 280,
+          ease: 'Quad.easeIn',
+        });
+      },
+    });
+  }
+
   public update(delta: number): void {
     if (this.isFromSky && this.y < this.targetY && !this.collected) {
       this.y += (this.fallSpeed * delta) / 1000;
@@ -78,6 +101,7 @@ export class Sun extends Phaser.GameObjects.Container {
   public collect(onComplete: () => void): void {
     if (this.collected) return;
     this.collected = true;
+    this.scene.tweens.killTweensOf(this);
 
     this.scene.tweens.add({
       targets: this,

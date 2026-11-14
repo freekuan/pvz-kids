@@ -425,9 +425,8 @@ export class GameScene extends Phaser.Scene {
           return;
         }
         
-        const startY = plant.y - 130;
-        const targetY = plant.y - 8;
-        const sun = new Sun(this, plant.x, startY, SUNFLOWER_SUN_AMOUNT, true, targetY);
+        const sun = new Sun(this, plant.x, plant.y, SUNFLOWER_SUN_AMOUNT);
+        sun.playSunflowerEject();
         sun.setInteractive();
         sun.on('pointerdown', () => {
           this.collectSun(sun);
