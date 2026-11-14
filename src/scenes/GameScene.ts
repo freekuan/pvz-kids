@@ -21,7 +21,9 @@ import {
   CHERRY_EXPLODE_DELAY,
   CHERRY_DAMAGE,
   CHERRY_RANGE,
+  HOUSE_CENTER_X,
 } from '../config/constants';
+import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
 
 export class GameScene extends Phaser.Scene {
   private currentLevel!: LevelConfig;
@@ -36,7 +38,11 @@ export class GameScene extends Phaser.Scene {
   
   private grid: (Plant | null)[][] = [];
   private selectedPlantType: string | null = null;
-  private plantCards: Map<string, { card: Phaser.GameObjects.Container; cooldownUntil: number }> = new Map();
+  private plantCards: Map<
+    string,
+    { card: Phaser.GameObjects.Container; highlight: Phaser.GameObjects.Rectangle; cooldownUntil: number }
+  > = new Map();
+  private seedBarY = 92;
   
   private currentWaveIndex: number = 0;
   private waveInProgress: boolean = false;
@@ -85,8 +91,7 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.cameras.main;
 
-    // Background
-    this.add.rectangle(width / 2, height / 2, width, height, 0x87CEEB);
+    this.drawBackdrop(width, height);
 
     // Draw lawn
     this.drawLawn();
@@ -114,152 +119,164 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private drawBackdrop(width: number, height: number): void {
+    const lawnBottom = GRID_START_Y + GRID_ROWS * TILE_HEIGHT + 40;
+    this.add.rectangle(width / 2, lawnBottom / 2 + 80, width, lawnBottom, 0x6ec6f5, 1);
+    this.add.rectangle(width / 2, lawnBottom + (height - lawnBottom) / 2, width, height - lawnBottom, 0x5a9e3e);
+
+    if (this.textures.exists(ASSET_MANIFEST.houseSidewalk.key)) {
+      const house = this.add.image(HOUSE_CENTER_X, height / 2 + 30, ASSET_MANIFEST.houseSidewalk.key);
+      house.setOrigin(0.5, 0.5);
+    }
+  }
+
   private drawLawn(): void {
-    // Draw grid
+    const lightKey = ASSET_MANIFEST.lawnLight.key;
+    const darkKey = ASSET_MANIFEST.lawnDark.key;
+    const hasTiles = this.textures.exists(lightKey) && this.textures.exists(darkKey);
+
     for (let row = 0; row < GRID_ROWS; row++) {
       for (let col = 0; col < GRID_COLS; col++) {
         const x = GRID_START_X + col * TILE_WIDTH;
         const y = GRID_START_Y + row * TILE_HEIGHT;
-        
-        // Alternating grass shades
-        const shade = (row + col) % 2 === 0 ? 0x7CFC00 : 0x90EE90;
-        const tile = this.add.rectangle(x, y, TILE_WIDTH - 4, TILE_HEIGHT - 4, shade, 0.3);
-        tile.setStrokeStyle(2, 0x228B22, 0.3);
-        tile.setInteractive();
-        
-        tile.on('pointerdown', () => {
+
+        if (hasTiles) {
+          const key = (row + col) % 2 === 0 ? lightKey : darkKey;
+          const tileImg = this.add.image(x, y, key);
+          tileImg.setDisplaySize(TILE_WIDTH, TILE_HEIGHT);
+        } else {
+          const shade = (row + col) % 2 === 0 ? 0x7cfc00 : 0x90ee90;
+          this.add.rectangle(x, y, TILE_WIDTH - 2, TILE_HEIGHT - 2, shade, 0.85);
+        }
+
+        const hit = this.add.zone(x, y, TILE_WIDTH, TILE_HEIGHT);
+        hit.setInteractive();
+        hit.on('pointerdown', () => {
           this.handleTileClick(row, col);
         });
       }
     }
-
-    // House on the left
-    this.add.rectangle(150, 360, 200, 500, 0x8B4513);
-    this.add.rectangle(150, 340, 180, 460, 0xD2691E);
-    this.add.text(150, 360, '🏠', { fontSize: '120px' }).setOrigin(0.5);
   }
 
   private createUI(): void {
     const { width } = this.cameras.main;
 
-    // Top bar background
-    this.add.rectangle(width / 2, 50, width, 100, 0x8B4513);
+    if (this.textures.exists(ASSET_MANIFEST.seedBar.key)) {
+      const bar = this.add.image(width / 2 - 40, this.seedBarY, ASSET_MANIFEST.seedBar.key);
+      bar.setScale(1.22);
+      bar.setDepth(10);
+    } else {
+      this.add.rectangle(width / 2, this.seedBarY, width, 100, 0x8b4513);
+    }
 
-    // Sun counter
-    const sunBg = this.add.rectangle(100, 50, 150, 70, 0xFFD700);
-    sunBg.setStrokeStyle(3, 0xFF8C00);
-    
-    this.add.text(60, 50, '☀️', { fontSize: '40px' }).setOrigin(0.5);
-    
-    this.sunText = this.add.text(120, 50, `${this.sunCount}`, {
-      fontSize: '36px',
-      color: '#000000',
+    if (this.textures.exists(ASSET_MANIFEST.sunCounter.key)) {
+      this.add.image(98, this.seedBarY - 4, ASSET_MANIFEST.sunCounter.key).setScale(1.05).setDepth(11);
+    }
+
+    if (this.textures.exists(ASSET_MANIFEST.sun.key)) {
+      this.add.image(width - 52, 72, ASSET_MANIFEST.sun.key).setScale(0.42).setDepth(5);
+    }
+
+    this.sunText = this.add.text(125, this.seedBarY - 6, `${this.sunCount}`, {
+      fontSize: '34px',
+      color: '#ffffff',
       fontStyle: 'bold',
+      stroke: '#8b5a00',
+      strokeThickness: 4,
     });
     this.sunText.setOrigin(0.5);
+    this.sunText.setDepth(12);
 
-    // Level name
-    this.add.text(width / 2, 50, this.currentLevel.name, {
-      fontSize: '32px',
-      color: '#FFFFFF',
+    this.add.text(width / 2, 168, this.currentLevel.name, {
+      fontSize: '26px',
+      color: '#1b4d1b',
       fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 3,
     }).setOrigin(0.5);
   }
 
   private createSeedCards(): void {
-    const startX = 280;
-    const cardWidth = 100;
-    const cardHeight = 120;
-    const spacing = 10;
+    const startX = 268;
+    const cardWidth = 88;
+    const cardHeight = 118;
+    const spacing = 8;
 
     this.currentLevel.availablePlants.forEach((plantType, index) => {
       const x = startX + index * (cardWidth + spacing);
-      const y = 50;
+      const y = this.seedBarY;
 
       const card = this.add.container(x, y);
-      
-      // Card background
-      const bg = this.add.rectangle(0, 0, cardWidth, cardHeight, 0x90EE90);
-      bg.setStrokeStyle(3, 0x228B22);
+      card.setDepth(15);
+
+      const packetKey = PACKET_TEXTURE_KEYS[plantType];
+      let bg: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
+      if (packetKey && this.textures.exists(packetKey)) {
+        bg = this.add.image(0, 0, packetKey);
+        bg.setDisplaySize(cardWidth, cardHeight);
+      } else {
+        bg = this.add.rectangle(0, 0, cardWidth, cardHeight, 0x90ee90);
+        (bg as Phaser.GameObjects.Rectangle).setStrokeStyle(3, 0x228b22);
+      }
       card.add(bg);
 
-      // Plant preview (small)
-      const preview = this.createPlantPreview(plantType);
-      preview.setScale(0.5);
-      preview.y = -20;
-      card.add(preview);
-
-      // Plant name
       const data = PLANT_TYPES[plantType];
-      const name = this.add.text(0, 25, data.name, {
-        fontSize: '18px',
-        color: '#000000',
+      const cost = this.add.text(0, 48, `${data.sunCost}`, {
+        fontSize: '17px',
+        color: '#4a2800',
         fontStyle: 'bold',
-      });
-      name.setOrigin(0.5);
-      card.add(name);
-
-      // Sun cost
-      const cost = this.add.text(0, 45, `${data.sunCost}☀️`, {
-        fontSize: '16px',
-        color: '#000000',
       });
       cost.setOrigin(0.5);
       card.add(cost);
 
-      // Make interactive
-      bg.setInteractive();
-      bg.on('pointerdown', () => {
+      const highlight = this.add.rectangle(0, 0, cardWidth + 6, cardHeight + 6);
+      highlight.setStrokeStyle(0, 0x000000, 0);
+      highlight.setFillStyle(0x000000, 0);
+      card.add(highlight);
+
+      const hit = this.add.zone(0, 0, cardWidth, cardHeight);
+      hit.setInteractive();
+      hit.on('pointerdown', () => {
         this.selectPlantCard(plantType);
       });
+      card.add(hit);
 
-      this.plantCards.set(plantType, { card, cooldownUntil: 0 });
+      this.plantCards.set(plantType, { card, highlight, cooldownUntil: 0 });
     });
 
-    // Shovel card
-    const shovelX = startX + this.currentLevel.availablePlants.length * (cardWidth + spacing);
-    const shovelCard = this.add.container(shovelX, 50);
-    
-    const shovelBg = this.add.rectangle(0, 0, cardWidth, cardHeight, 0xD3D3D3);
-    shovelBg.setStrokeStyle(3, 0x808080);
-    shovelCard.add(shovelBg);
-    
-    this.add.text(shovelX, 30, '🔨', { fontSize: '40px' }).setOrigin(0.5);
-    this.add.text(shovelX, 60, 'Shovel', { fontSize: '16px', color: '#000000' }).setOrigin(0.5);
-    
-    shovelBg.setInteractive();
-    shovelBg.on('pointerdown', () => {
+    const shovelX =
+      startX + this.currentLevel.availablePlants.length * (cardWidth + spacing) + 28;
+    const shovelCard = this.add.container(shovelX, this.seedBarY);
+    shovelCard.setDepth(15);
+
+    const shovelHighlight = this.add.rectangle(0, 0, cardWidth, cardHeight);
+    shovelHighlight.setStrokeStyle(0, 0x000000, 0);
+    shovelHighlight.setFillStyle(0x000000, 0);
+    shovelCard.add(shovelHighlight);
+
+    if (this.textures.exists(ASSET_MANIFEST.shovel.key)) {
+      const shovel = this.add.image(0, -8, ASSET_MANIFEST.shovel.key);
+      shovel.setScale(0.75);
+      shovelCard.add(shovel);
+    }
+
+    const shovelLabel = this.add.text(0, 46, '铲', {
+      fontSize: '18px',
+      color: '#4a2800',
+      fontStyle: 'bold',
+    });
+    shovelLabel.setOrigin(0.5);
+    shovelCard.add(shovelLabel);
+
+    const shovelHit = this.add.zone(0, 0, cardWidth, cardHeight);
+    shovelHit.setInteractive();
+    shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
       this.updateCardSelection();
     });
+    shovelCard.add(shovelHit);
 
-    this.plantCards.set('shovel', { card: shovelCard, cooldownUntil: 0 });
-  }
-
-  private createPlantPreview(plantType: string): Phaser.GameObjects.Graphics {
-    const g = this.add.graphics();
-    
-    switch (plantType) {
-      case 'sunflower':
-        g.fillStyle(0xFFD700, 1);
-        g.fillCircle(0, 0, 35);
-        break;
-      case 'peashooter':
-        g.fillStyle(0x228B22, 1);
-        g.fillCircle(0, 0, 35);
-        break;
-      case 'wallnut':
-        g.fillStyle(0x8B4513, 1);
-        g.fillRoundedRect(-35, -35, 70, 70, 10);
-        break;
-      case 'cherrybomb':
-        g.fillStyle(0xFF0000, 1);
-        g.fillCircle(-15, 0, 25);
-        g.fillCircle(15, 0, 25);
-        break;
-    }
-    
-    return g;
+    this.plantCards.set('shovel', { card: shovelCard, highlight: shovelHighlight, cooldownUntil: 0 });
   }
 
   private selectPlantCard(plantType: string): void {
@@ -280,11 +297,11 @@ export class GameScene extends Phaser.Scene {
 
   private updateCardSelection(): void {
     this.plantCards.forEach((cardData, plantType) => {
-      const bg = cardData.card.list[0] as Phaser.GameObjects.Rectangle;
-      if (plantType === this.selectedPlantType) {
-        bg.setStrokeStyle(5, 0xFFFF00);
+      const selected = plantType === this.selectedPlantType;
+      if (selected) {
+        cardData.highlight.setStrokeStyle(5, 0xffff00, 1);
       } else {
-        bg.setStrokeStyle(3, plantType === 'shovel' ? 0x808080 : 0x228B22);
+        cardData.highlight.setStrokeStyle(0, 0x000000, 0);
       }
     });
   }
@@ -326,7 +343,7 @@ export class GameScene extends Phaser.Scene {
       cardData.cooldownUntil = this.time.now + plantData.cooldown;
       
       // Visual cooldown overlay
-      const overlay = this.add.rectangle(0, 0, 100, 120, 0x000000, 0.5);
+      const overlay = this.add.rectangle(0, 0, 88, 118, 0x000000, 0.5);
       cardData.card.add(overlay);
       
       this.tweens.add({
