@@ -20,14 +20,15 @@ export const HUD_PACKET_BAR_RATIO = 1.1;
 export const HUD_SHOVEL_BAR_RATIO = 1.05;
 export const HUD_SUN_COUNTER_SRC_WIDTH = 311;
 export const HUD_SUN_COUNTER_SRC_HEIGHT = 186;
-export const HUD_BAR_SUN_INSET_X = 18;
 export const HUD_PACKET_SRC_WIDTH = 240;
 export const HUD_PACKET_SRC_HEIGHT = 272;
-export const HUD_PACKETS_START_SRC_X = 332;
-export const HUD_PACKET_GAP_SRC = 8;
 export const HUD_SHOVEL_SRC_WIDTH = 176;
 export const HUD_SHOVEL_SRC_HEIGHT = 256;
-export const HUD_BAR_SHOVEL_INSET_X = 48;
+/** Padding inside the wooden bar and gaps between HUD elements (screen px). */
+export const HUD_BAR_PAD_X = 10;
+export const HUD_ELEMENT_GAP = 8;
+/** Slightly wider packets vs strict art aspect for long English names. */
+export const HUD_PACKET_WIDTH_RATIO = 1.05;
 
 // Game balance
 export const INITIAL_SUN = 150;
