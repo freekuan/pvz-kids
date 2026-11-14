@@ -26,7 +26,10 @@ import {
   HUD_BAR_SRC_WIDTH,
   HUD_BAR_SRC_HEIGHT,
   HUD_BAR_LEFT_X,
-  HUD_SEED_BAR_CENTER_Y,
+  HUD_CLEARANCE_ABOVE_LAWN,
+  HUD_TOP_MARGIN,
+  HUD_PACKET_BAR_RATIO,
+  HUD_SHOVEL_BAR_RATIO,
   HUD_SUN_COUNTER_SRC_WIDTH,
   HUD_SUN_COUNTER_SRC_HEIGHT,
   HUD_BAR_SUN_INSET_X,
@@ -64,7 +67,6 @@ export class GameScene extends Phaser.Scene {
     string,
     { card: Phaser.GameObjects.Container; highlight: Phaser.GameObjects.Rectangle; cooldownUntil: number }
   > = new Map();
-  private readonly seedBarY = HUD_SEED_BAR_CENTER_Y;
   
   private currentWaveIndex: number = 0;
   private waveInProgress: boolean = false;
@@ -205,15 +207,21 @@ export class GameScene extends Phaser.Scene {
     const barW = HUD_BAR_SRC_WIDTH * s;
     const barH = HUD_BAR_SRC_HEIGHT * s;
     const barLeft = HUD_BAR_LEFT_X;
-    const barCenterY = this.seedBarY;
-
+    const lawnTopY = GRID_START_Y - TILE_HEIGHT / 2;
+    const packetBottomInset = 3 + (barH * HUD_PACKET_BAR_RATIO) / 2;
+    let barCenterY = lawnTopY - HUD_CLEARANCE_ABOVE_LAWN - packetBottomInset;
     const sunCounterH = barH * 0.96;
+    const minCenterY = HUD_TOP_MARGIN + sunCounterH / 2 + 1;
+    if (barCenterY < minCenterY) {
+      barCenterY = minCenterY;
+    }
+
     const sunCounterScale = sunCounterH / HUD_SUN_COUNTER_SRC_HEIGHT;
     const sunCounterW = HUD_SUN_COUNTER_SRC_WIDTH * sunCounterScale;
     const sunCounterX = barLeft + (HUD_BAR_SUN_INSET_X + HUD_SUN_COUNTER_SRC_WIDTH / 2) * s;
     const sunCounterY = barCenterY - 1;
 
-    const packetH = barH * 1.1;
+    const packetH = barH * HUD_PACKET_BAR_RATIO;
     const packetScale = packetH / HUD_PACKET_SRC_HEIGHT;
     const packetW = HUD_PACKET_SRC_WIDTH * packetScale;
     const packetStep = (HUD_PACKET_SRC_WIDTH + HUD_PACKET_GAP_SRC) * packetScale;
@@ -221,7 +229,7 @@ export class GameScene extends Phaser.Scene {
       barLeft + (HUD_PACKETS_START_SRC_X + HUD_PACKET_SRC_WIDTH / 2) * s;
     const packetY = barCenterY - 3;
 
-    const shovelH = barH * 1.05;
+    const shovelH = barH * HUD_SHOVEL_BAR_RATIO;
     const shovelScale = shovelH / HUD_SHOVEL_SRC_HEIGHT;
     const shovelW = HUD_SHOVEL_SRC_WIDTH * shovelScale;
     const shovelX =
@@ -282,8 +290,12 @@ export class GameScene extends Phaser.Scene {
     this.sunText.setOrigin(0.5);
     this.sunText.setDepth(13);
 
+    const levelLabelY = Math.min(
+      layout.barCenterY + layout.barH / 2 + 18,
+      GRID_START_Y - TILE_HEIGHT / 2 - 4
+    );
     this.add
-      .text(width / 2, layout.barCenterY + layout.barH * 0.72, this.currentLevel.name, {
+      .text(width / 2, levelLabelY, this.currentLevel.name, {
         fontSize: '24px',
         color: '#1b4d1b',
         fontStyle: 'bold',

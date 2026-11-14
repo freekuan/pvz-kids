@@ -8,11 +8,16 @@ export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
 
 /** Official HUD slices — layout matched to preview-hud reference (source pixels at 1224×202 bar). */
-export const HUD_BAR_SCALE = 0.5;
+export const HUD_BAR_SCALE = 0.4;
 export const HUD_BAR_SRC_WIDTH = 1224;
 export const HUD_BAR_SRC_HEIGHT = 202;
-export const HUD_BAR_LEFT_X = 208;
-export const HUD_SEED_BAR_CENTER_Y = 54;
+/** Right of the mower column (`GRID_START_X - 80` + mower art). */
+export const HUD_BAR_LEFT_X = GRID_START_X - 80 + 74;
+export const HUD_CLEARANCE_ABOVE_LAWN = 10;
+export const HUD_TOP_MARGIN = 4;
+/** Packet display height as a multiple of the scaled bar height (preview proportions). */
+export const HUD_PACKET_BAR_RATIO = 1.1;
+export const HUD_SHOVEL_BAR_RATIO = 1.05;
 export const HUD_SUN_COUNTER_SRC_WIDTH = 311;
 export const HUD_SUN_COUNTER_SRC_HEIGHT = 186;
 export const HUD_BAR_SUN_INSET_X = 18;
