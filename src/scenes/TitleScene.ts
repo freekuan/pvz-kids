@@ -1,4 +1,42 @@
 import Phaser from 'phaser';
+import { ASSET_MANIFEST } from '../config/assets';
+
+/** Center lawn band between foreground characters — UI overlay anchor. */
+const CENTER_X = 640;
+const TITLE_Y = 218;
+const DEDICATION_EN_Y = 312;
+const DEDICATION_ZH_Y = 362;
+const START_BTN = { x: CENTER_X, y: 458, width: 340, height: 92 };
+
+const titleTextStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+  fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+  fontSize: '62px',
+  color: '#2dad2d',
+  fontStyle: 'bold',
+  align: 'center',
+  stroke: '#ffffff',
+  strokeThickness: 10,
+  shadow: { offsetX: 2, offsetY: 3, color: '#1a5c1a', blur: 4, fill: true },
+};
+
+const dedicationEnStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+  fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+  fontSize: '38px',
+  color: '#2e6b3a',
+  fontStyle: 'bold',
+  align: 'center',
+  stroke: '#ffffff',
+  strokeThickness: 6,
+};
+
+const dedicationZhStyle: Phaser.Types.GameObjects.Text.TextStyle = {
+  fontFamily: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
+  fontSize: '34px',
+  color: '#3d7a4a',
+  align: 'center',
+  stroke: '#ffffff',
+  strokeThickness: 5,
+};
 
 export class TitleScene extends Phaser.Scene {
   constructor() {
@@ -8,77 +46,59 @@ export class TitleScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.cameras.main;
 
-    // Background
-    this.add.rectangle(width / 2, height / 2, width, height, 0x87CEEB);
+    if (this.textures.exists(ASSET_MANIFEST.titleScreen.key)) {
+      this.add.image(width / 2, height / 2, ASSET_MANIFEST.titleScreen.key).setOrigin(0.5);
+    } else {
+      this.add.rectangle(width / 2, height / 2, width, height, 0x87ceeb);
+    }
 
-    // Title
-    const title = this.add.text(width / 2, height / 3, 'Plants vs Zombies\nKids', {
-      fontSize: '72px',
-      color: '#006400',
-      fontStyle: 'bold',
-      align: 'center',
-      stroke: '#FFFFFF',
-      strokeThickness: 6,
-    });
+    const signPanel = this.add.graphics();
+    signPanel.fillStyle(0xfff8e7, 0.78);
+    signPanel.lineStyle(4, 0x8b5a2b, 0.85);
+    signPanel.fillRoundedRect(CENTER_X - 310, 155, 620, 360, 24);
+    signPanel.strokeRoundedRect(CENTER_X - 310, 155, 620, 360, 24);
+
+    const title = this.add.text(CENTER_X, TITLE_Y, 'Plants vs Zombies Kids', titleTextStyle);
     title.setOrigin(0.5);
 
-    const dedicationEn = this.add.text(width / 2, title.y + 72, 'A Game for Zhiyuan', {
-      fontSize: '40px',
-      color: '#2E8B57',
-      align: 'center',
-    });
-    dedicationEn.setOrigin(0.5, 0);
+    const dedicationEn = this.add.text(CENTER_X, DEDICATION_EN_Y, 'A Game for Zhiyuan', dedicationEnStyle);
+    dedicationEn.setOrigin(0.5);
 
-    const dedicationZh = this.add.text(width / 2, dedicationEn.y + 46, '给芷鸢的游戏', {
-      fontSize: '30px',
-      color: '#6B9E6B',
-      align: 'center',
-    });
-    dedicationZh.setOrigin(0.5, 0);
+    const dedicationZh = this.add.text(CENTER_X, DEDICATION_ZH_Y, '给芷鸢的游戏', dedicationZhStyle);
+    dedicationZh.setOrigin(0.5);
 
-    // Subtitle
-    const subtitle = this.add.text(width / 2, height / 2, 'Tower Defense Game', {
-      fontSize: '32px',
-      color: '#228B22',
-      align: 'center',
-    });
-    subtitle.setOrigin(0.5);
+    const btn = this.add.rectangle(
+      START_BTN.x,
+      START_BTN.y,
+      START_BTN.width,
+      START_BTN.height,
+      0x32cd32,
+      1
+    );
+    btn.setStrokeStyle(5, 0xffffff, 1);
+    btn.setInteractive({ useHandCursor: true });
 
-    // Play button
-    const playButton = this.add.rectangle(width / 2, height * 0.65, 300, 80, 0x32CD32);
-    playButton.setStrokeStyle(4, 0x006400);
-    playButton.setInteractive({ useHandCursor: true });
-
-    const playText = this.add.text(width / 2, height * 0.65, 'PLAY', {
-      fontSize: '48px',
-      color: '#FFFFFF',
+    const startLabel = this.add.text(START_BTN.x, START_BTN.y, '开始', {
+      fontFamily: '"PingFang SC", "Microsoft YaHei", "Noto Sans SC", sans-serif',
+      fontSize: '52px',
+      color: '#ffffff',
       fontStyle: 'bold',
+      stroke: '#1b6b1b',
+      strokeThickness: 5,
     });
-    playText.setOrigin(0.5);
+    startLabel.setOrigin(0.5);
 
-    playButton.on('pointerover', () => {
-      playButton.setFillStyle(0x3FE03F);
+    btn.on('pointerover', () => {
+      btn.setFillStyle(0x45e045);
     });
-
-    playButton.on('pointerout', () => {
-      playButton.setFillStyle(0x32CD32);
+    btn.on('pointerout', () => {
+      btn.setFillStyle(0x32cd32);
     });
-
-    playButton.on('pointerdown', () => {
+    btn.on('pointerdown', () => {
       this.scene.start('LevelSelectScene');
     });
 
-    // Instructions
-    const instructions = this.add.text(
-      width / 2,
-      height * 0.85,
-      'Tap cards to plant • Defend your house from zombies!',
-      {
-        fontSize: '24px',
-        color: '#333333',
-        align: 'center',
-      }
-    );
-    instructions.setOrigin(0.5);
+    // Lift UI above background art.
+    [signPanel, title, dedicationEn, dedicationZh, btn, startLabel].forEach((obj) => obj.setDepth(2));
   }
 }

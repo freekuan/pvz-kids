@@ -1,8 +1,9 @@
 // Grid configuration
 export const GRID_COLS = 9;
 export const GRID_ROWS = 5;
-export const GRID_START_X = 340;
-export const GRID_START_Y = 140;
+export const GRID_START_X = 335;
+export const GRID_START_Y = 200;
+export const HOUSE_CENTER_X = 168;
 export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
 
