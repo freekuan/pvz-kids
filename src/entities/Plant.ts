@@ -3,11 +3,15 @@ import {
   PLANT_TYPES,
   ROW_SPRITE_FOOT_OFFSET,
   PLANT_TILE_FIT,
+  PLANT_TILE_FIT_LABELLED,
   TILE_WIDTH,
-  PEASHOOTER_MOUTH_X_RATIO,
-  PEASHOOTER_MOUTH_Y_RATIO,
+  PEASHOOTER_MOUTH_X_OF_WIDTH,
+  PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP,
 } from '../config/constants';
 import { PLANT_TEXTURE_KEYS } from '../config/assets';
+
+/** Sunflower/peashooter PNGs still include baked name labels until design re-exports. */
+const LABELLED_PLANT_TYPES = new Set(['sunflower', 'peashooter']);
 
 export class Plant extends Phaser.GameObjects.Container {
   public plantType: string;
@@ -35,8 +39,11 @@ export class Plant extends Phaser.GameObjects.Container {
     if (textureKey && scene.textures.exists(textureKey)) {
       this.sprite = scene.add.image(0, ROW_SPRITE_FOOT_OFFSET, textureKey);
       this.sprite.setOrigin(0.5, 1);
+      const tileFit = LABELLED_PLANT_TYPES.has(plantType)
+        ? PLANT_TILE_FIT_LABELLED
+        : PLANT_TILE_FIT;
       const scale = Math.min(
-        PLANT_TILE_FIT / this.sprite.height,
+        tileFit / this.sprite.height,
         (TILE_WIDTH - 10) / this.sprite.width
       );
       this.sprite.setScale(scale);
@@ -57,19 +64,18 @@ export class Plant extends Phaser.GameObjects.Container {
     scene.add.existing(this);
   }
 
-  /** World X at the peashooter mouth and local Y offset for the pea sprite on the row. */
-  public getPeaSpawn(): { worldX: number; rowY: number; peaOffsetY: number } | null {
+  /** World position at the peashooter snout opening (right-side barrel). */
+  public getPeaSpawn(): { worldX: number; worldY: number } | null {
     if (this.plantType !== 'peashooter' || !this.sprite) return null;
 
     const dw = this.sprite.displayWidth;
     const dh = this.sprite.displayHeight;
-    const mouthLocalX = dw * PEASHOOTER_MOUTH_X_RATIO;
-    const mouthLocalY = ROW_SPRITE_FOOT_OFFSET - dh * PEASHOOTER_MOUTH_Y_RATIO;
+    const mouthLocalX = dw * PEASHOOTER_MOUTH_X_OF_WIDTH;
+    const mouthLocalY = ROW_SPRITE_FOOT_OFFSET - dh * PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP;
 
     return {
       worldX: this.x + mouthLocalX,
-      rowY: this.y,
-      peaOffsetY: mouthLocalY,
+      worldY: this.y + mouthLocalY,
     };
   }
 

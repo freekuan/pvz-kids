@@ -5,36 +5,28 @@ import { ASSET_MANIFEST } from '../config/assets';
 export class Projectile extends Phaser.GameObjects.Container {
   public damage: number;
   public row: number;
-  private sprite?: Phaser.GameObjects.Image;
-  private graphics?: Phaser.GameObjects.Graphics;
 
-  constructor(
-    scene: Phaser.Scene,
-    x: number,
-    rowY: number,
-    row: number,
-    peaOffsetY: number = 0
-  ) {
-    super(scene, x, rowY);
+  constructor(scene: Phaser.Scene, x: number, worldY: number, row: number) {
+    super(scene, x, worldY);
 
     this.row = row;
     this.damage = PEA_DAMAGE;
 
     const peaKey = ASSET_MANIFEST.pea.key;
     if (scene.textures.exists(peaKey)) {
-      this.sprite = scene.add.image(0, peaOffsetY, peaKey);
-      this.sprite.setOrigin(0.5, 0.5);
-      const scale = PEA_DISPLAY_SIZE / Math.max(this.sprite.width, this.sprite.height);
-      this.sprite.setScale(scale);
-      this.add(this.sprite);
+      const pea = scene.add.image(0, 0, peaKey);
+      pea.setOrigin(0.5, 0.5);
+      const scale = PEA_DISPLAY_SIZE / Math.max(pea.width, pea.height);
+      pea.setScale(scale);
+      this.add(pea);
     } else {
-      this.graphics = scene.add.graphics();
-      this.graphics.fillStyle(0x90ee90, 1);
-      this.graphics.fillCircle(0, peaOffsetY, 8);
-      this.add(this.graphics);
+      const graphics = scene.add.graphics();
+      graphics.fillStyle(0x90ee90, 1);
+      graphics.fillCircle(0, 0, 8);
+      this.add(graphics);
     }
 
-    this.setDepth(5);
+    this.setDepth(6);
 
     scene.add.existing(this);
   }

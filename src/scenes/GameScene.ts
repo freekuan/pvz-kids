@@ -117,6 +117,9 @@ export class GameScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.cameras.main;
 
+    this.input.setTopOnly(true);
+    this.input.on('pointerdown', this.handlePointerDown, this);
+
     this.drawBackdrop(width, height);
 
     // Draw lawn
@@ -176,8 +179,12 @@ export class GameScene extends Phaser.Scene {
         }
 
         const hit = this.add.zone(x, y, TILE_WIDTH, TILE_HEIGHT);
+        hit.setDepth(2);
         hit.setInteractive();
-        hit.on('pointerdown', () => {
+        hit.on('pointerdown', (pointer: Phaser.Input.Pointer) => {
+          if (this.tryCollectSunAtPointer(pointer.worldX, pointer.worldY)) {
+            return;
+          }
           this.handleTileClick(row, col);
         });
       }
@@ -584,9 +591,8 @@ export class GameScene extends Phaser.Scene {
             const projectile = new Projectile(
               this,
               spawn.worldX,
-              spawn.rowY,
-              plant.row,
-              spawn.peaOffsetY
+              spawn.worldY,
+              plant.row
             );
             this.projectiles.push(projectile);
           }
@@ -628,12 +634,32 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
+  private handlePointerDown(pointer: Phaser.Input.Pointer): void {
+    if (this.gameOver) return;
+    this.tryCollectSunAtPointer(pointer.worldX, pointer.worldY);
+  }
+
+  private tryCollectSunAtPointer(worldX: number, worldY: number): boolean {
+    for (let i = this.suns.length - 1; i >= 0; i--) {
+      const sun = this.suns[i];
+      if (!sun.active || sun.isCollected()) continue;
+      if (sun.containsWorldPoint(worldX, worldY)) {
+        this.collectSun(sun);
+        return true;
+      }
+    }
+    return false;
+  }
+
   private collectSun(sun: Sun): void {
+    if (!sun.active || sun.isCollected()) return;
+
+    const value = sun.value;
     sun.collect(() => {
-      this.sunCount += sun.value;
+      this.sunCount += value;
       this.sunText.setText(`${this.sunCount}`);
     });
-    
+
     const index = this.suns.indexOf(sun);
     if (index > -1) {
       this.suns.splice(index, 1);
@@ -786,8 +812,9 @@ export class GameScene extends Phaser.Scene {
       // Check collision with zombies
       this.zombies.forEach(zombie => {
         if (zombie.row === projectile.row) {
-          const distance = Phaser.Math.Distance.Between(projectile.x, projectile.y, zombie.x, zombie.y);
-          if (distance < 40) {
+          const dx = Math.abs(zombie.x - projectile.x);
+          const dy = Math.abs(zombie.y - projectile.y);
+          if (dx < 42 && dy < 58) {
             zombie.takeDamage(projectile.damage);
             projectile.destroy();
           }
