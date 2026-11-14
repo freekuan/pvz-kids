@@ -80,6 +80,8 @@ export class GameScene extends Phaser.Scene {
   
   private gameOver: boolean = false;
   private showingFinalWaveWarning: boolean = false;
+  private waveSpawnComplete: boolean = false;
+  private waveRestPending: boolean = false;
 
   constructor() {
     super({ key: 'GameScene' });
@@ -103,6 +105,8 @@ export class GameScene extends Phaser.Scene {
     this.peashooterTimers.clear();
     this.gameOver = false;
     this.showingFinalWaveWarning = false;
+    this.waveSpawnComplete = false;
+    this.waveRestPending = false;
     
     // Initialize grid
     this.grid = [];
@@ -142,9 +146,55 @@ export class GameScene extends Phaser.Scene {
       loop: true,
     });
 
-    // Start first wave after delay
-    this.time.delayedCall(3000, () => {
-      this.startNextWave();
+    this.scheduleLevelStart();
+  }
+
+  private usesClearBetweenWavesPacing(): boolean {
+    return (
+      this.currentLevel.prepTimeMs !== undefined &&
+      this.currentLevel.restTimeMs !== undefined
+    );
+  }
+
+  private scheduleLevelStart(): void {
+    const prepMs = this.usesClearBetweenWavesPacing()
+      ? this.currentLevel.prepTimeMs!
+      : 3_000;
+
+    this.time.delayedCall(prepMs, () => {
+      if (this.gameOver) return;
+      if (this.usesClearBetweenWavesPacing()) {
+        this.showZombiesComingBanner(() => this.startNextWave());
+      } else {
+        this.startNextWave();
+      }
+    });
+  }
+
+  private showZombiesComingBanner(onComplete: () => void): void {
+    const { width, height } = this.cameras.main;
+
+    const banner = this.add.text(width / 2, height / 2, '僵尸来了', {
+      fontFamily: 'Arial, "PingFang SC", "Microsoft YaHei", sans-serif',
+      fontSize: '80px',
+      color: '#ff4444',
+      fontStyle: 'bold',
+      stroke: '#ffffff',
+      strokeThickness: 8,
+    });
+    banner.setOrigin(0.5);
+    banner.setDepth(1000);
+
+    this.tweens.add({
+      targets: banner,
+      scale: { from: 0.6, to: 1.1 },
+      alpha: { from: 1, to: 0 },
+      duration: 2200,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        banner.destroy();
+        onComplete();
+      },
     });
   }
 
@@ -679,6 +729,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.waveInProgress = true;
+    this.waveSpawnComplete = false;
     this.waveStartTime = this.time.now;
     this.zombiesSpawnedInWave.clear();
 
@@ -725,15 +776,36 @@ export class GameScene extends Phaser.Scene {
       }
     });
 
-    // Check if wave is complete
     if (this.zombiesSpawnedInWave.size === currentWave.length) {
       this.waveInProgress = false;
-      
-      // Start next wave after delay
-      this.time.delayedCall(15000, () => {
-        this.startNextWave();
-      });
+      this.waveSpawnComplete = true;
+
+      if (this.usesClearBetweenWavesPacing()) {
+        this.tryScheduleRestBetweenWaves();
+      } else if (this.currentWaveIndex < this.currentLevel.waves.length) {
+        this.time.delayedCall(15_000, () => {
+          this.startNextWave();
+        });
+      }
     }
+  }
+
+  private tryScheduleRestBetweenWaves(): void {
+    if (!this.usesClearBetweenWavesPacing()) return;
+    if (!this.waveSpawnComplete || this.waveRestPending) return;
+    if (this.zombies.length > 0) return;
+    if (this.currentWaveIndex >= this.currentLevel.waves.length) return;
+
+    this.waveRestPending = true;
+    const restMs = this.currentLevel.restTimeMs!;
+
+    this.time.delayedCall(restMs, () => {
+      this.waveRestPending = false;
+      this.waveSpawnComplete = false;
+      if (!this.gameOver) {
+        this.startNextWave();
+      }
+    });
   }
 
   private spawnZombie(zombieType: string, lane: number): void {
@@ -845,10 +917,17 @@ export class GameScene extends Phaser.Scene {
     this.suns = this.suns.filter(s => s.active);
     this.mowers = this.mowers.filter(m => m.active);
 
+    if (this.usesClearBetweenWavesPacing()) {
+      this.tryScheduleRestBetweenWaves();
+    }
+
     // Check win condition
-    if (!this.waveInProgress && 
-        this.currentWaveIndex >= this.currentLevel.waves.length && 
-        this.zombies.length === 0) {
+    if (
+      !this.waveInProgress &&
+      this.waveSpawnComplete &&
+      this.currentWaveIndex >= this.currentLevel.waves.length &&
+      this.zombies.length === 0
+    ) {
       this.winGame();
     }
   }
