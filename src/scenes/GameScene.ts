@@ -22,8 +22,16 @@ import {
   CHERRY_DAMAGE,
   CHERRY_RANGE,
   HOUSE_CENTER_X,
+  HUD_SEED_BAR_CENTER_Y,
+  HUD_BAR_HEIGHT,
+  HUD_BAR_LEFT_X,
+  HUD_SUN_SLOT_WIDTH,
+  HUD_CARD_WIDTH,
+  HUD_CARD_HEIGHT,
+  HUD_CARD_GAP,
+  HUD_SHOVEL_GAP,
 } from '../config/constants';
-import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
+import { ASSET_MANIFEST, PLANT_TEXTURE_KEYS } from '../config/assets';
 
 export class GameScene extends Phaser.Scene {
   private currentLevel!: LevelConfig;
@@ -42,7 +50,7 @@ export class GameScene extends Phaser.Scene {
     string,
     { card: Phaser.GameObjects.Container; highlight: Phaser.GameObjects.Rectangle; cooldownUntil: number }
   > = new Map();
-  private seedBarY = 92;
+  private readonly seedBarY = HUD_SEED_BAR_CENTER_Y;
   
   private currentWaveIndex: number = 0;
   private waveInProgress: boolean = false;
@@ -158,118 +166,205 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private createUI(): void {
-    const { width } = this.cameras.main;
+  private getSeedBarLayout(): {
+    plantCardStartX: number;
+    barWidth: number;
+    barCenterX: number;
+  } {
+    const plantCount = this.currentLevel.availablePlants.length;
+    const cardsSpan =
+      plantCount * HUD_CARD_WIDTH + Math.max(0, plantCount - 1) * HUD_CARD_GAP;
+    const barWidth =
+      HUD_SUN_SLOT_WIDTH + HUD_CARD_GAP + cardsSpan + HUD_SHOVEL_GAP + HUD_CARD_WIDTH;
+    const barCenterX = HUD_BAR_LEFT_X + barWidth / 2;
+    const plantCardStartX =
+      HUD_BAR_LEFT_X + HUD_SUN_SLOT_WIDTH + HUD_CARD_GAP + HUD_CARD_WIDTH / 2;
+    return { plantCardStartX, barWidth, barCenterX };
+  }
 
-    if (this.textures.exists(ASSET_MANIFEST.seedBar.key)) {
-      const bar = this.add.image(width / 2 - 40, this.seedBarY, ASSET_MANIFEST.seedBar.key);
-      bar.setScale(1.22);
-      bar.setDepth(10);
-    } else {
-      this.add.rectangle(width / 2, this.seedBarY, width, 100, 0x8b4513);
-    }
+  private drawCodeSeedBar(barCenterX: number, barWidth: number): void {
+    const bar = this.add.rectangle(
+      barCenterX,
+      this.seedBarY,
+      barWidth,
+      HUD_BAR_HEIGHT,
+      0x8b5a2b,
+      1
+    );
+    bar.setStrokeStyle(3, 0x5c3d1e, 1);
+    bar.setDepth(10);
 
-    if (this.textures.exists(ASSET_MANIFEST.sunCounter.key)) {
-      this.add.image(98, this.seedBarY - 4, ASSET_MANIFEST.sunCounter.key).setScale(1.05).setDepth(11);
-    }
+    const inner = this.add.rectangle(
+      barCenterX,
+      this.seedBarY + 2,
+      barWidth - 8,
+      HUD_BAR_HEIGHT - 10,
+      0xa67c52,
+      1
+    );
+    inner.setDepth(10);
 
-    if (this.textures.exists(ASSET_MANIFEST.sun.key)) {
-      this.add.image(width - 52, 72, ASSET_MANIFEST.sun.key).setScale(0.42).setDepth(5);
-    }
+    const sunSlotX = HUD_BAR_LEFT_X + HUD_SUN_SLOT_WIDTH / 2;
+    const sunSlot = this.add.rectangle(
+      sunSlotX,
+      this.seedBarY,
+      HUD_SUN_SLOT_WIDTH - 6,
+      HUD_BAR_HEIGHT - 8,
+      0xc9a66b,
+      1
+    );
+    sunSlot.setStrokeStyle(2, 0x6b4423, 1);
+    sunSlot.setDepth(11);
 
-    this.sunText = this.add.text(125, this.seedBarY - 6, `${this.sunCount}`, {
-      fontSize: '34px',
-      color: '#ffffff',
+    const sunIcon = this.add.circle(sunSlotX - 22, this.seedBarY - 2, 16, 0xffd200, 1);
+    sunIcon.setStrokeStyle(2, 0xe6a800, 1);
+    sunIcon.setDepth(12);
+
+    this.sunText = this.add.text(sunSlotX + 12, this.seedBarY, `${this.sunCount}`, {
+      fontSize: '26px',
+      color: '#3d2914',
       fontStyle: 'bold',
-      stroke: '#8b5a00',
-      strokeThickness: 4,
     });
     this.sunText.setOrigin(0.5);
     this.sunText.setDepth(12);
+  }
 
-    this.add.text(width / 2, 168, this.currentLevel.name, {
-      fontSize: '26px',
-      color: '#1b4d1b',
-      fontStyle: 'bold',
-      stroke: '#ffffff',
-      strokeThickness: 3,
-    }).setOrigin(0.5);
+  private addPlantCardIcon(
+    card: Phaser.GameObjects.Container,
+    plantType: string
+  ): void {
+    const textureKey = PLANT_TEXTURE_KEYS[plantType];
+    if (textureKey && this.textures.exists(textureKey)) {
+      const icon = this.add.image(0, -10, textureKey);
+      icon.setOrigin(0.5, 0.5);
+      const target = 44;
+      const scale = target / Math.max(icon.width, icon.height);
+      icon.setScale(scale);
+      card.add(icon);
+      return;
+    }
+
+    const g = this.add.graphics();
+    switch (plantType) {
+      case 'sunflower':
+        g.fillStyle(0xffd700, 1);
+        g.fillCircle(0, -10, 18);
+        break;
+      case 'peashooter':
+        g.fillStyle(0x228b22, 1);
+        g.fillCircle(0, -10, 18);
+        break;
+      case 'wallnut':
+        g.fillStyle(0x8b4513, 1);
+        g.fillRoundedRect(-18, -28, 36, 36, 8);
+        break;
+      case 'cherrybomb':
+        g.fillStyle(0xff0000, 1);
+        g.fillCircle(-8, -10, 12);
+        g.fillCircle(8, -10, 12);
+        break;
+      default:
+        g.fillStyle(0x90ee90, 1);
+        g.fillCircle(0, -10, 16);
+    }
+    card.add(g);
+  }
+
+  private createUI(): void {
+    const { width } = this.cameras.main;
+    const { barCenterX, barWidth } = this.getSeedBarLayout();
+    this.drawCodeSeedBar(barCenterX, barWidth);
+
+    this.add
+      .text(width / 2, 118, this.currentLevel.name, {
+        fontSize: '24px',
+        color: '#1b4d1b',
+        fontStyle: 'bold',
+        stroke: '#ffffff',
+        strokeThickness: 3,
+      })
+      .setOrigin(0.5)
+      .setDepth(5);
   }
 
   private createSeedCards(): void {
-    const startX = 268;
-    const cardWidth = 88;
-    const cardHeight = 118;
-    const spacing = 8;
+    const { plantCardStartX } = this.getSeedBarLayout();
+    const cardStep = HUD_CARD_WIDTH + HUD_CARD_GAP;
 
     this.currentLevel.availablePlants.forEach((plantType, index) => {
-      const x = startX + index * (cardWidth + spacing);
+      const x = plantCardStartX + index * cardStep;
       const y = this.seedBarY;
 
       const card = this.add.container(x, y);
       card.setDepth(15);
 
-      const packetKey = PACKET_TEXTURE_KEYS[plantType];
-      let bg: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
-      if (packetKey && this.textures.exists(packetKey)) {
-        bg = this.add.image(0, 0, packetKey);
-        bg.setDisplaySize(cardWidth, cardHeight);
-      } else {
-        bg = this.add.rectangle(0, 0, cardWidth, cardHeight, 0x90ee90);
-        (bg as Phaser.GameObjects.Rectangle).setStrokeStyle(3, 0x228b22);
-      }
+      const bg = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0xe8d4a8, 1);
+      bg.setStrokeStyle(2, 0x6b4423, 1);
       card.add(bg);
 
+      this.addPlantCardIcon(card, plantType);
+
       const data = PLANT_TYPES[plantType];
-      const cost = this.add.text(0, 48, `${data.sunCost}`, {
-        fontSize: '17px',
-        color: '#4a2800',
+      const cost = this.add.text(0, HUD_CARD_HEIGHT / 2 - 14, `${data.sunCost}`, {
+        fontSize: '16px',
+        color: '#3d2914',
         fontStyle: 'bold',
       });
       cost.setOrigin(0.5);
       card.add(cost);
 
-      const highlight = this.add.rectangle(0, 0, cardWidth + 6, cardHeight + 6);
+      const highlight = this.add.rectangle(0, 0, HUD_CARD_WIDTH + 4, HUD_CARD_HEIGHT + 4);
       highlight.setStrokeStyle(0, 0x000000, 0);
       highlight.setFillStyle(0x000000, 0);
       card.add(highlight);
 
-      const hit = this.add.zone(0, 0, cardWidth, cardHeight);
-      hit.setInteractive();
+      const hit = this.add.zone(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT);
+      hit.setInteractive({ useHandCursor: true });
+      const selectedType = plantType;
       hit.on('pointerdown', () => {
-        this.selectPlantCard(plantType);
+        this.selectPlantCard(selectedType);
       });
       card.add(hit);
 
       this.plantCards.set(plantType, { card, highlight, cooldownUntil: 0 });
     });
 
+    const plantCount = this.currentLevel.availablePlants.length;
     const shovelX =
-      startX + this.currentLevel.availablePlants.length * (cardWidth + spacing) + 28;
+      plantCardStartX +
+      (plantCount - 1) * cardStep +
+      HUD_CARD_WIDTH +
+      HUD_SHOVEL_GAP +
+      HUD_CARD_WIDTH / 2;
     const shovelCard = this.add.container(shovelX, this.seedBarY);
     shovelCard.setDepth(15);
 
-    const shovelHighlight = this.add.rectangle(0, 0, cardWidth, cardHeight);
+    const shovelBg = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0xe8d4a8, 1);
+    shovelBg.setStrokeStyle(2, 0x6b4423, 1);
+    shovelCard.add(shovelBg);
+
+    const shovelHighlight = this.add.rectangle(0, 0, HUD_CARD_WIDTH + 4, HUD_CARD_HEIGHT + 4);
     shovelHighlight.setStrokeStyle(0, 0x000000, 0);
     shovelHighlight.setFillStyle(0x000000, 0);
     shovelCard.add(shovelHighlight);
 
     if (this.textures.exists(ASSET_MANIFEST.shovel.key)) {
-      const shovel = this.add.image(0, -8, ASSET_MANIFEST.shovel.key);
-      shovel.setScale(0.75);
+      const shovel = this.add.image(0, -6, ASSET_MANIFEST.shovel.key);
+      const shovelScale = 42 / Math.max(shovel.width, shovel.height);
+      shovel.setScale(shovelScale);
       shovelCard.add(shovel);
+    } else {
+      const shovelMark = this.add.text(0, -8, '铲', {
+        fontSize: '22px',
+        color: '#3d2914',
+        fontStyle: 'bold',
+      });
+      shovelMark.setOrigin(0.5);
+      shovelCard.add(shovelMark);
     }
 
-    const shovelLabel = this.add.text(0, 46, '铲', {
-      fontSize: '18px',
-      color: '#4a2800',
-      fontStyle: 'bold',
-    });
-    shovelLabel.setOrigin(0.5);
-    shovelCard.add(shovelLabel);
-
-    const shovelHit = this.add.zone(0, 0, cardWidth, cardHeight);
-    shovelHit.setInteractive();
+    const shovelHit = this.add.zone(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT);
+    shovelHit.setInteractive({ useHandCursor: true });
     shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
       this.updateCardSelection();
@@ -343,7 +438,7 @@ export class GameScene extends Phaser.Scene {
       cardData.cooldownUntil = this.time.now + plantData.cooldown;
       
       // Visual cooldown overlay
-      const overlay = this.add.rectangle(0, 0, 88, 118, 0x000000, 0.5);
+      const overlay = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0x000000, 0.5);
       cardData.card.add(overlay);
       
       this.tweens.add({
