@@ -32,8 +32,12 @@ export class Sun extends Phaser.GameObjects.Container {
     }
 
     const hitRadius = 34;
-    const hitArea = new Phaser.Geom.Circle(0, 0, hitRadius);
-    this.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
+    this.setInteractive({
+      hitArea: new Phaser.Geom.Circle(0, 0, hitRadius),
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+      useHandCursor: true,
+    });
+    this.setDepth(20);
 
     scene.add.existing(this);
 

@@ -27,6 +27,8 @@ export class LawnMower extends Phaser.GameObjects.Container {
       this.add(this.graphics);
     }
 
+    this.setDepth(6);
+
     scene.add.existing(this);
   }
 
