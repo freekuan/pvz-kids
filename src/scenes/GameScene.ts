@@ -22,8 +22,31 @@ import {
   CHERRY_DAMAGE,
   CHERRY_RANGE,
   HOUSE_CENTER_X,
+  HUD_BAR_SCALE,
+  HUD_BAR_SRC_HEIGHT,
+  HUD_BAR_LEFT_X,
+  HUD_CLEARANCE_ABOVE_LAWN,
+  HUD_TOP_MARGIN,
+  HUD_PACKET_BAR_RATIO,
+  HUD_SHOVEL_BAR_RATIO,
+  HUD_SUN_COUNTER_SRC_WIDTH,
+  HUD_SUN_COUNTER_SRC_HEIGHT,
+  HUD_PACKET_SRC_WIDTH,
+  HUD_PACKET_SRC_HEIGHT,
+  HUD_SHOVEL_SRC_WIDTH,
+  HUD_SHOVEL_SRC_HEIGHT,
+  HUD_BAR_PAD_X,
+  HUD_ELEMENT_GAP,
+  HUD_PACKET_WIDTH_RATIO,
 } from '../config/constants';
 import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
+
+const PACKET_DISPLAY_NAMES: Record<string, string> = {
+  sunflower: 'Sunflower',
+  peashooter: 'Peashooter',
+  wallnut: 'Wall-nut',
+  cherrybomb: 'Cherry Bomb',
+};
 
 export class GameScene extends Phaser.Scene {
   private currentLevel!: LevelConfig;
@@ -42,7 +65,6 @@ export class GameScene extends Phaser.Scene {
     string,
     { card: Phaser.GameObjects.Container; highlight: Phaser.GameObjects.Rectangle; cooldownUntil: number }
   > = new Map();
-  private seedBarY = 92;
   
   private currentWaveIndex: number = 0;
   private waveInProgress: boolean = false;
@@ -158,118 +180,215 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
+  private getHudLayout(): {
+    barW: number;
+    barH: number;
+    barLeft: number;
+    barRight: number;
+    barCenterY: number;
+    sunCounterX: number;
+    sunCounterY: number;
+    sunCounterW: number;
+    sunCounterH: number;
+    sunTextX: number;
+    sunTextY: number;
+    packetW: number;
+    packetH: number;
+    packetCentersX: number[];
+    packetY: number;
+    shovelX: number;
+    shovelY: number;
+    shovelW: number;
+    shovelH: number;
+  } {
+    const barH = HUD_BAR_SRC_HEIGHT * HUD_BAR_SCALE;
+    const barLeft = HUD_BAR_LEFT_X;
+    const lawnTopY = GRID_START_Y - TILE_HEIGHT / 2;
+    const packetBottomInset = 3 + (barH * HUD_PACKET_BAR_RATIO) / 2;
+    let barCenterY = lawnTopY - HUD_CLEARANCE_ABOVE_LAWN - packetBottomInset;
+    const sunCounterH = barH * 0.96;
+    const minCenterY = HUD_TOP_MARGIN + sunCounterH / 2 + 1;
+    if (barCenterY < minCenterY) {
+      barCenterY = minCenterY;
+    }
+
+    const sunCounterScale = sunCounterH / HUD_SUN_COUNTER_SRC_HEIGHT;
+    const sunCounterW = HUD_SUN_COUNTER_SRC_WIDTH * sunCounterScale;
+    const sunCounterY = barCenterY - 1;
+
+    const packetH = barH * HUD_PACKET_BAR_RATIO;
+    const packetScale = packetH / HUD_PACKET_SRC_HEIGHT;
+    const packetW = HUD_PACKET_SRC_WIDTH * packetScale * HUD_PACKET_WIDTH_RATIO;
+    const packetY = barCenterY - 3;
+
+    const shovelH = barH * HUD_SHOVEL_BAR_RATIO;
+    const shovelScale = shovelH / HUD_SHOVEL_SRC_HEIGHT;
+    const shovelW = HUD_SHOVEL_SRC_WIDTH * shovelScale;
+    const shovelY = barCenterY - 2;
+
+    const plantCount = this.currentLevel.availablePlants.length;
+    const gap = HUD_ELEMENT_GAP;
+    const pad = HUD_BAR_PAD_X;
+    const packetsSpan =
+      plantCount > 0 ? plantCount * packetW + (plantCount - 1) * gap : 0;
+    const barW =
+      pad + sunCounterW + gap + packetsSpan + gap + shovelW + pad;
+    const barRight = barLeft + barW;
+
+    let cursorX = barLeft + pad;
+    const sunCounterX = cursorX + sunCounterW / 2;
+    cursorX += sunCounterW + gap;
+
+    const packetCentersX: number[] = [];
+    for (let i = 0; i < plantCount; i++) {
+      packetCentersX.push(cursorX + packetW / 2);
+      cursorX += packetW + gap;
+    }
+
+    const shovelX = cursorX + shovelW / 2;
+
+    const sunTextX = sunCounterX + sunCounterW * 0.14;
+    const sunTextY = sunCounterY;
+
+    return {
+      barW,
+      barH,
+      barLeft,
+      barRight,
+      barCenterY,
+      sunCounterX,
+      sunCounterY,
+      sunCounterW,
+      sunCounterH,
+      sunTextX,
+      sunTextY,
+      packetW,
+      packetH,
+      packetCentersX,
+      packetY,
+      shovelX,
+      shovelY,
+      shovelW,
+      shovelH,
+    };
+  }
+
   private createUI(): void {
     const { width } = this.cameras.main;
+    const layout = this.getHudLayout();
 
     if (this.textures.exists(ASSET_MANIFEST.seedBar.key)) {
-      const bar = this.add.image(width / 2 - 40, this.seedBarY, ASSET_MANIFEST.seedBar.key);
-      bar.setScale(1.22);
-      bar.setDepth(10);
-    } else {
-      this.add.rectangle(width / 2, this.seedBarY, width, 100, 0x8b4513);
+      this.add
+        .image(layout.barLeft + layout.barW / 2, layout.barCenterY, ASSET_MANIFEST.seedBar.key)
+        .setDisplaySize(layout.barW, layout.barH)
+        .setDepth(10);
     }
 
     if (this.textures.exists(ASSET_MANIFEST.sunCounter.key)) {
-      this.add.image(98, this.seedBarY - 4, ASSET_MANIFEST.sunCounter.key).setScale(1.05).setDepth(11);
+      this.add
+        .image(layout.sunCounterX, layout.sunCounterY, ASSET_MANIFEST.sunCounter.key)
+        .setDisplaySize(layout.sunCounterW, layout.sunCounterH)
+        .setDepth(12);
     }
 
-    if (this.textures.exists(ASSET_MANIFEST.sun.key)) {
-      this.add.image(width - 52, 72, ASSET_MANIFEST.sun.key).setScale(0.42).setDepth(5);
-    }
-
-    this.sunText = this.add.text(125, this.seedBarY - 6, `${this.sunCount}`, {
-      fontSize: '34px',
+    this.sunText = this.add.text(layout.sunTextX, layout.sunTextY, `${this.sunCount}`, {
+      fontSize: `${Math.round(30 * HUD_BAR_SCALE * 2)}px`,
       color: '#ffffff',
       fontStyle: 'bold',
-      stroke: '#8b5a00',
-      strokeThickness: 4,
+      stroke: '#6b4423',
+      strokeThickness: 3,
     });
     this.sunText.setOrigin(0.5);
-    this.sunText.setDepth(12);
+    this.sunText.setDepth(13);
 
-    this.add.text(width / 2, 168, this.currentLevel.name, {
-      fontSize: '26px',
-      color: '#1b4d1b',
-      fontStyle: 'bold',
-      stroke: '#ffffff',
-      strokeThickness: 3,
-    }).setOrigin(0.5);
+    const levelLabelX = Math.min(layout.barRight + 14, width - 8);
+    this.add
+      .text(levelLabelX, layout.barCenterY, this.currentLevel.name, {
+        fontSize: '24px',
+        color: '#1b4d1b',
+        fontStyle: 'bold',
+        stroke: '#ffffff',
+        strokeThickness: 3,
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(5);
   }
 
   private createSeedCards(): void {
-    const startX = 268;
-    const cardWidth = 88;
-    const cardHeight = 118;
-    const spacing = 8;
+    const layout = this.getHudLayout();
 
     this.currentLevel.availablePlants.forEach((plantType, index) => {
-      const x = startX + index * (cardWidth + spacing);
-      const y = this.seedBarY;
+      const x = layout.packetCentersX[index];
+      const y = layout.packetY;
 
       const card = this.add.container(x, y);
       card.setDepth(15);
 
       const packetKey = PACKET_TEXTURE_KEYS[plantType];
-      let bg: Phaser.GameObjects.Image | Phaser.GameObjects.Rectangle;
       if (packetKey && this.textures.exists(packetKey)) {
-        bg = this.add.image(0, 0, packetKey);
-        bg.setDisplaySize(cardWidth, cardHeight);
+        const packet = this.add.image(0, 0, packetKey);
+        packet.setDisplaySize(layout.packetW, layout.packetH);
+        card.add(packet);
       } else {
-        bg = this.add.rectangle(0, 0, cardWidth, cardHeight, 0x90ee90);
-        (bg as Phaser.GameObjects.Rectangle).setStrokeStyle(3, 0x228b22);
+        const fallback = this.add.rectangle(0, 0, layout.packetW, layout.packetH, 0xe8d4a8, 1);
+        fallback.setStrokeStyle(2, 0x6b4423, 1);
+        card.add(fallback);
       }
-      card.add(bg);
 
       const data = PLANT_TYPES[plantType];
-      const cost = this.add.text(0, 48, `${data.sunCost}`, {
-        fontSize: '17px',
-        color: '#4a2800',
+      const label = PACKET_DISPLAY_NAMES[plantType] ?? plantType;
+      const nameText = this.add.text(0, layout.packetH / 2 - 18, label, {
+        fontSize: '11px',
+        color: '#3d2914',
         fontStyle: 'bold',
+        stroke: '#fff8e7',
+        strokeThickness: 2,
+      });
+      nameText.setOrigin(0.5);
+      card.add(nameText);
+
+      const cost = this.add.text(0, layout.packetH / 2 - 4, `${data.sunCost}`, {
+        fontSize: '15px',
+        color: '#1b3d0a',
+        fontStyle: 'bold',
+        stroke: '#ffffff',
+        strokeThickness: 2,
       });
       cost.setOrigin(0.5);
       card.add(cost);
 
-      const highlight = this.add.rectangle(0, 0, cardWidth + 6, cardHeight + 6);
+      const highlight = this.add.rectangle(0, 0, layout.packetW + 6, layout.packetH + 6);
       highlight.setStrokeStyle(0, 0x000000, 0);
       highlight.setFillStyle(0x000000, 0);
       card.add(highlight);
 
-      const hit = this.add.zone(0, 0, cardWidth, cardHeight);
-      hit.setInteractive();
+      const hit = this.add.zone(0, 0, layout.packetW, layout.packetH);
+      hit.setInteractive({ useHandCursor: true });
+      const selectedType = plantType;
       hit.on('pointerdown', () => {
-        this.selectPlantCard(plantType);
+        this.selectPlantCard(selectedType);
       });
       card.add(hit);
 
       this.plantCards.set(plantType, { card, highlight, cooldownUntil: 0 });
     });
 
-    const shovelX =
-      startX + this.currentLevel.availablePlants.length * (cardWidth + spacing) + 28;
-    const shovelCard = this.add.container(shovelX, this.seedBarY);
+    const shovelCard = this.add.container(layout.shovelX, layout.shovelY);
     shovelCard.setDepth(15);
 
-    const shovelHighlight = this.add.rectangle(0, 0, cardWidth, cardHeight);
+    const shovelHighlight = this.add.rectangle(0, 0, layout.shovelW + 6, layout.shovelH + 6);
     shovelHighlight.setStrokeStyle(0, 0x000000, 0);
     shovelHighlight.setFillStyle(0x000000, 0);
     shovelCard.add(shovelHighlight);
 
     if (this.textures.exists(ASSET_MANIFEST.shovel.key)) {
-      const shovel = this.add.image(0, -8, ASSET_MANIFEST.shovel.key);
-      shovel.setScale(0.75);
+      const shovel = this.add.image(0, 0, ASSET_MANIFEST.shovel.key);
+      shovel.setDisplaySize(layout.shovelW, layout.shovelH);
       shovelCard.add(shovel);
     }
 
-    const shovelLabel = this.add.text(0, 46, '铲', {
-      fontSize: '18px',
-      color: '#4a2800',
-      fontStyle: 'bold',
-    });
-    shovelLabel.setOrigin(0.5);
-    shovelCard.add(shovelLabel);
-
-    const shovelHit = this.add.zone(0, 0, cardWidth, cardHeight);
-    shovelHit.setInteractive();
+    const shovelHit = this.add.zone(0, 0, layout.shovelW, layout.shovelH);
+    shovelHit.setInteractive({ useHandCursor: true });
     shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
       this.updateCardSelection();
@@ -343,7 +462,8 @@ export class GameScene extends Phaser.Scene {
       cardData.cooldownUntil = this.time.now + plantData.cooldown;
       
       // Visual cooldown overlay
-      const overlay = this.add.rectangle(0, 0, 88, 118, 0x000000, 0.5);
+      const { packetW, packetH } = this.getHudLayout();
+      const overlay = this.add.rectangle(0, 0, packetW, packetH, 0x000000, 0.5);
       cardData.card.add(overlay);
       
       this.tweens.add({
