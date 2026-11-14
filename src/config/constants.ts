@@ -7,15 +7,22 @@ export const HOUSE_CENTER_X = 168;
 export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
 
-/** Top HUD seed bar — kept above the house roof and first lawn row. */
-export const HUD_SEED_BAR_CENTER_Y = 50;
-export const HUD_BAR_HEIGHT = 72;
-export const HUD_BAR_LEFT_X = 238;
-export const HUD_SUN_SLOT_WIDTH = 92;
-export const HUD_CARD_WIDTH = 68;
-export const HUD_CARD_HEIGHT = 72;
-export const HUD_CARD_GAP = 6;
-export const HUD_SHOVEL_GAP = 10;
+/** Official HUD slices — layout matched to preview-hud reference (source pixels at 1224×202 bar). */
+export const HUD_BAR_SCALE = 0.5;
+export const HUD_BAR_SRC_WIDTH = 1224;
+export const HUD_BAR_SRC_HEIGHT = 202;
+export const HUD_BAR_LEFT_X = 208;
+export const HUD_SEED_BAR_CENTER_Y = 54;
+export const HUD_SUN_COUNTER_SRC_WIDTH = 311;
+export const HUD_SUN_COUNTER_SRC_HEIGHT = 186;
+export const HUD_BAR_SUN_INSET_X = 18;
+export const HUD_PACKET_SRC_WIDTH = 240;
+export const HUD_PACKET_SRC_HEIGHT = 272;
+export const HUD_PACKETS_START_SRC_X = 332;
+export const HUD_PACKET_GAP_SRC = 8;
+export const HUD_SHOVEL_SRC_WIDTH = 176;
+export const HUD_SHOVEL_SRC_HEIGHT = 256;
+export const HUD_BAR_SHOVEL_INSET_X = 48;
 
 // Game balance
 export const INITIAL_SUN = 150;

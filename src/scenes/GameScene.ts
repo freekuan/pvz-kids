@@ -22,16 +22,30 @@ import {
   CHERRY_DAMAGE,
   CHERRY_RANGE,
   HOUSE_CENTER_X,
-  HUD_SEED_BAR_CENTER_Y,
-  HUD_BAR_HEIGHT,
+  HUD_BAR_SCALE,
+  HUD_BAR_SRC_WIDTH,
+  HUD_BAR_SRC_HEIGHT,
   HUD_BAR_LEFT_X,
-  HUD_SUN_SLOT_WIDTH,
-  HUD_CARD_WIDTH,
-  HUD_CARD_HEIGHT,
-  HUD_CARD_GAP,
-  HUD_SHOVEL_GAP,
+  HUD_SEED_BAR_CENTER_Y,
+  HUD_SUN_COUNTER_SRC_WIDTH,
+  HUD_SUN_COUNTER_SRC_HEIGHT,
+  HUD_BAR_SUN_INSET_X,
+  HUD_PACKET_SRC_WIDTH,
+  HUD_PACKET_SRC_HEIGHT,
+  HUD_PACKETS_START_SRC_X,
+  HUD_PACKET_GAP_SRC,
+  HUD_SHOVEL_SRC_WIDTH,
+  HUD_SHOVEL_SRC_HEIGHT,
+  HUD_BAR_SHOVEL_INSET_X,
 } from '../config/constants';
-import { ASSET_MANIFEST, PLANT_TEXTURE_KEYS } from '../config/assets';
+import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS } from '../config/assets';
+
+const PACKET_DISPLAY_NAMES: Record<string, string> = {
+  sunflower: 'Sunflower',
+  peashooter: 'Peashooter',
+  wallnut: 'Wall-nut',
+  cherrybomb: 'Cherry Bomb',
+};
 
 export class GameScene extends Phaser.Scene {
   private currentLevel!: LevelConfig;
@@ -166,117 +180,110 @@ export class GameScene extends Phaser.Scene {
     }
   }
 
-  private getSeedBarLayout(): {
-    plantCardStartX: number;
-    barWidth: number;
-    barCenterX: number;
+  private getHudLayout(): {
+    barW: number;
+    barH: number;
+    barLeft: number;
+    barCenterY: number;
+    sunCounterX: number;
+    sunCounterY: number;
+    sunCounterW: number;
+    sunCounterH: number;
+    sunTextX: number;
+    sunTextY: number;
+    packetW: number;
+    packetH: number;
+    packetStep: number;
+    firstPacketCenterX: number;
+    packetY: number;
+    shovelX: number;
+    shovelY: number;
+    shovelW: number;
+    shovelH: number;
   } {
-    const plantCount = this.currentLevel.availablePlants.length;
-    const cardsSpan =
-      plantCount * HUD_CARD_WIDTH + Math.max(0, plantCount - 1) * HUD_CARD_GAP;
-    const barWidth =
-      HUD_SUN_SLOT_WIDTH + HUD_CARD_GAP + cardsSpan + HUD_SHOVEL_GAP + HUD_CARD_WIDTH;
-    const barCenterX = HUD_BAR_LEFT_X + barWidth / 2;
-    const plantCardStartX =
-      HUD_BAR_LEFT_X + HUD_SUN_SLOT_WIDTH + HUD_CARD_GAP + HUD_CARD_WIDTH / 2;
-    return { plantCardStartX, barWidth, barCenterX };
-  }
+    const s = HUD_BAR_SCALE;
+    const barW = HUD_BAR_SRC_WIDTH * s;
+    const barH = HUD_BAR_SRC_HEIGHT * s;
+    const barLeft = HUD_BAR_LEFT_X;
+    const barCenterY = this.seedBarY;
 
-  private drawCodeSeedBar(barCenterX: number, barWidth: number): void {
-    const bar = this.add.rectangle(
-      barCenterX,
-      this.seedBarY,
-      barWidth,
-      HUD_BAR_HEIGHT,
-      0x8b5a2b,
-      1
-    );
-    bar.setStrokeStyle(3, 0x5c3d1e, 1);
-    bar.setDepth(10);
+    const sunCounterH = barH * 0.96;
+    const sunCounterScale = sunCounterH / HUD_SUN_COUNTER_SRC_HEIGHT;
+    const sunCounterW = HUD_SUN_COUNTER_SRC_WIDTH * sunCounterScale;
+    const sunCounterX = barLeft + (HUD_BAR_SUN_INSET_X + HUD_SUN_COUNTER_SRC_WIDTH / 2) * s;
+    const sunCounterY = barCenterY - 1;
 
-    const inner = this.add.rectangle(
-      barCenterX,
-      this.seedBarY + 2,
-      barWidth - 8,
-      HUD_BAR_HEIGHT - 10,
-      0xa67c52,
-      1
-    );
-    inner.setDepth(10);
+    const packetH = barH * 1.1;
+    const packetScale = packetH / HUD_PACKET_SRC_HEIGHT;
+    const packetW = HUD_PACKET_SRC_WIDTH * packetScale;
+    const packetStep = (HUD_PACKET_SRC_WIDTH + HUD_PACKET_GAP_SRC) * packetScale;
+    const firstPacketCenterX =
+      barLeft + (HUD_PACKETS_START_SRC_X + HUD_PACKET_SRC_WIDTH / 2) * s;
+    const packetY = barCenterY - 3;
 
-    const sunSlotX = HUD_BAR_LEFT_X + HUD_SUN_SLOT_WIDTH / 2;
-    const sunSlot = this.add.rectangle(
-      sunSlotX,
-      this.seedBarY,
-      HUD_SUN_SLOT_WIDTH - 6,
-      HUD_BAR_HEIGHT - 8,
-      0xc9a66b,
-      1
-    );
-    sunSlot.setStrokeStyle(2, 0x6b4423, 1);
-    sunSlot.setDepth(11);
+    const shovelH = barH * 1.05;
+    const shovelScale = shovelH / HUD_SHOVEL_SRC_HEIGHT;
+    const shovelW = HUD_SHOVEL_SRC_WIDTH * shovelScale;
+    const shovelX =
+      barLeft + barW - (HUD_BAR_SHOVEL_INSET_X + HUD_SHOVEL_SRC_WIDTH / 2) * s;
+    const shovelY = barCenterY - 2;
 
-    const sunIcon = this.add.circle(sunSlotX - 22, this.seedBarY - 2, 16, 0xffd200, 1);
-    sunIcon.setStrokeStyle(2, 0xe6a800, 1);
-    sunIcon.setDepth(12);
+    const sunTextX = sunCounterX + sunCounterW * 0.14;
+    const sunTextY = sunCounterY;
 
-    this.sunText = this.add.text(sunSlotX + 12, this.seedBarY, `${this.sunCount}`, {
-      fontSize: '26px',
-      color: '#3d2914',
-      fontStyle: 'bold',
-    });
-    this.sunText.setOrigin(0.5);
-    this.sunText.setDepth(12);
-  }
-
-  private addPlantCardIcon(
-    card: Phaser.GameObjects.Container,
-    plantType: string
-  ): void {
-    const textureKey = PLANT_TEXTURE_KEYS[plantType];
-    if (textureKey && this.textures.exists(textureKey)) {
-      const icon = this.add.image(0, -10, textureKey);
-      icon.setOrigin(0.5, 0.5);
-      const target = 44;
-      const scale = target / Math.max(icon.width, icon.height);
-      icon.setScale(scale);
-      card.add(icon);
-      return;
-    }
-
-    const g = this.add.graphics();
-    switch (plantType) {
-      case 'sunflower':
-        g.fillStyle(0xffd700, 1);
-        g.fillCircle(0, -10, 18);
-        break;
-      case 'peashooter':
-        g.fillStyle(0x228b22, 1);
-        g.fillCircle(0, -10, 18);
-        break;
-      case 'wallnut':
-        g.fillStyle(0x8b4513, 1);
-        g.fillRoundedRect(-18, -28, 36, 36, 8);
-        break;
-      case 'cherrybomb':
-        g.fillStyle(0xff0000, 1);
-        g.fillCircle(-8, -10, 12);
-        g.fillCircle(8, -10, 12);
-        break;
-      default:
-        g.fillStyle(0x90ee90, 1);
-        g.fillCircle(0, -10, 16);
-    }
-    card.add(g);
+    return {
+      barW,
+      barH,
+      barLeft,
+      barCenterY,
+      sunCounterX,
+      sunCounterY,
+      sunCounterW,
+      sunCounterH,
+      sunTextX,
+      sunTextY,
+      packetW,
+      packetH,
+      packetStep,
+      firstPacketCenterX,
+      packetY,
+      shovelX,
+      shovelY,
+      shovelW,
+      shovelH,
+    };
   }
 
   private createUI(): void {
     const { width } = this.cameras.main;
-    const { barCenterX, barWidth } = this.getSeedBarLayout();
-    this.drawCodeSeedBar(barCenterX, barWidth);
+    const layout = this.getHudLayout();
+
+    if (this.textures.exists(ASSET_MANIFEST.seedBar.key)) {
+      this.add
+        .image(layout.barLeft + layout.barW / 2, layout.barCenterY, ASSET_MANIFEST.seedBar.key)
+        .setDisplaySize(layout.barW, layout.barH)
+        .setDepth(10);
+    }
+
+    if (this.textures.exists(ASSET_MANIFEST.sunCounter.key)) {
+      this.add
+        .image(layout.sunCounterX, layout.sunCounterY, ASSET_MANIFEST.sunCounter.key)
+        .setDisplaySize(layout.sunCounterW, layout.sunCounterH)
+        .setDepth(12);
+    }
+
+    this.sunText = this.add.text(layout.sunTextX, layout.sunTextY, `${this.sunCount}`, {
+      fontSize: `${Math.round(30 * HUD_BAR_SCALE * 2)}px`,
+      color: '#ffffff',
+      fontStyle: 'bold',
+      stroke: '#6b4423',
+      strokeThickness: 3,
+    });
+    this.sunText.setOrigin(0.5);
+    this.sunText.setDepth(13);
 
     this.add
-      .text(width / 2, 118, this.currentLevel.name, {
+      .text(width / 2, layout.barCenterY + layout.barH * 0.72, this.currentLevel.name, {
         fontSize: '24px',
         color: '#1b4d1b',
         fontStyle: 'bold',
@@ -288,37 +295,54 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createSeedCards(): void {
-    const { plantCardStartX } = this.getSeedBarLayout();
-    const cardStep = HUD_CARD_WIDTH + HUD_CARD_GAP;
+    const layout = this.getHudLayout();
 
     this.currentLevel.availablePlants.forEach((plantType, index) => {
-      const x = plantCardStartX + index * cardStep;
-      const y = this.seedBarY;
+      const x = layout.firstPacketCenterX + index * layout.packetStep;
+      const y = layout.packetY;
 
       const card = this.add.container(x, y);
       card.setDepth(15);
 
-      const bg = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0xe8d4a8, 1);
-      bg.setStrokeStyle(2, 0x6b4423, 1);
-      card.add(bg);
-
-      this.addPlantCardIcon(card, plantType);
+      const packetKey = PACKET_TEXTURE_KEYS[plantType];
+      if (packetKey && this.textures.exists(packetKey)) {
+        const packet = this.add.image(0, 0, packetKey);
+        packet.setDisplaySize(layout.packetW, layout.packetH);
+        card.add(packet);
+      } else {
+        const fallback = this.add.rectangle(0, 0, layout.packetW, layout.packetH, 0xe8d4a8, 1);
+        fallback.setStrokeStyle(2, 0x6b4423, 1);
+        card.add(fallback);
+      }
 
       const data = PLANT_TYPES[plantType];
-      const cost = this.add.text(0, HUD_CARD_HEIGHT / 2 - 14, `${data.sunCost}`, {
-        fontSize: '16px',
+      const label = PACKET_DISPLAY_NAMES[plantType] ?? plantType;
+      const nameText = this.add.text(0, layout.packetH / 2 - 18, label, {
+        fontSize: '11px',
         color: '#3d2914',
         fontStyle: 'bold',
+        stroke: '#fff8e7',
+        strokeThickness: 2,
+      });
+      nameText.setOrigin(0.5);
+      card.add(nameText);
+
+      const cost = this.add.text(0, layout.packetH / 2 - 4, `${data.sunCost}`, {
+        fontSize: '15px',
+        color: '#1b3d0a',
+        fontStyle: 'bold',
+        stroke: '#ffffff',
+        strokeThickness: 2,
       });
       cost.setOrigin(0.5);
       card.add(cost);
 
-      const highlight = this.add.rectangle(0, 0, HUD_CARD_WIDTH + 4, HUD_CARD_HEIGHT + 4);
+      const highlight = this.add.rectangle(0, 0, layout.packetW + 6, layout.packetH + 6);
       highlight.setStrokeStyle(0, 0x000000, 0);
       highlight.setFillStyle(0x000000, 0);
       card.add(highlight);
 
-      const hit = this.add.zone(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT);
+      const hit = this.add.zone(0, 0, layout.packetW, layout.packetH);
       hit.setInteractive({ useHandCursor: true });
       const selectedType = plantType;
       hit.on('pointerdown', () => {
@@ -329,41 +353,21 @@ export class GameScene extends Phaser.Scene {
       this.plantCards.set(plantType, { card, highlight, cooldownUntil: 0 });
     });
 
-    const plantCount = this.currentLevel.availablePlants.length;
-    const shovelX =
-      plantCardStartX +
-      (plantCount - 1) * cardStep +
-      HUD_CARD_WIDTH +
-      HUD_SHOVEL_GAP +
-      HUD_CARD_WIDTH / 2;
-    const shovelCard = this.add.container(shovelX, this.seedBarY);
+    const shovelCard = this.add.container(layout.shovelX, layout.shovelY);
     shovelCard.setDepth(15);
 
-    const shovelBg = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0xe8d4a8, 1);
-    shovelBg.setStrokeStyle(2, 0x6b4423, 1);
-    shovelCard.add(shovelBg);
-
-    const shovelHighlight = this.add.rectangle(0, 0, HUD_CARD_WIDTH + 4, HUD_CARD_HEIGHT + 4);
+    const shovelHighlight = this.add.rectangle(0, 0, layout.shovelW + 6, layout.shovelH + 6);
     shovelHighlight.setStrokeStyle(0, 0x000000, 0);
     shovelHighlight.setFillStyle(0x000000, 0);
     shovelCard.add(shovelHighlight);
 
     if (this.textures.exists(ASSET_MANIFEST.shovel.key)) {
-      const shovel = this.add.image(0, -6, ASSET_MANIFEST.shovel.key);
-      const shovelScale = 42 / Math.max(shovel.width, shovel.height);
-      shovel.setScale(shovelScale);
+      const shovel = this.add.image(0, 0, ASSET_MANIFEST.shovel.key);
+      shovel.setDisplaySize(layout.shovelW, layout.shovelH);
       shovelCard.add(shovel);
-    } else {
-      const shovelMark = this.add.text(0, -8, '铲', {
-        fontSize: '22px',
-        color: '#3d2914',
-        fontStyle: 'bold',
-      });
-      shovelMark.setOrigin(0.5);
-      shovelCard.add(shovelMark);
     }
 
-    const shovelHit = this.add.zone(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT);
+    const shovelHit = this.add.zone(0, 0, layout.shovelW, layout.shovelH);
     shovelHit.setInteractive({ useHandCursor: true });
     shovelHit.on('pointerdown', () => {
       this.selectedPlantType = 'shovel';
@@ -438,7 +442,8 @@ export class GameScene extends Phaser.Scene {
       cardData.cooldownUntil = this.time.now + plantData.cooldown;
       
       // Visual cooldown overlay
-      const overlay = this.add.rectangle(0, 0, HUD_CARD_WIDTH, HUD_CARD_HEIGHT, 0x000000, 0.5);
+      const { packetW, packetH } = this.getHudLayout();
+      const overlay = this.add.rectangle(0, 0, packetW, packetH, 0x000000, 0.5);
       cardData.card.add(overlay);
       
       this.tweens.add({
