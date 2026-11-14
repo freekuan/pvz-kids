@@ -1,6 +1,8 @@
 import Phaser from 'phaser';
 import { ASSET_MANIFEST } from '../config/assets';
 
+const COLLECTIBLE_SUN_SIZE = 52;
+
 export class Sun extends Phaser.GameObjects.Container {
   public value: number;
   public isFromSky: boolean;
@@ -20,7 +22,7 @@ export class Sun extends Phaser.GameObjects.Container {
     const sunKey = ASSET_MANIFEST.sun.key;
     if (scene.textures.exists(sunKey)) {
       this.sprite = scene.add.image(0, 0, sunKey);
-      const scale = 52 / this.sprite.width;
+      const scale = COLLECTIBLE_SUN_SIZE / Math.max(this.sprite.width, this.sprite.height);
       this.sprite.setScale(scale);
       this.add(this.sprite);
     } else {
@@ -30,8 +32,12 @@ export class Sun extends Phaser.GameObjects.Container {
     }
 
     const hitRadius = 34;
-    const hitArea = new Phaser.Geom.Circle(0, 0, hitRadius);
-    this.setInteractive(hitArea, Phaser.Geom.Circle.Contains);
+    this.setInteractive({
+      hitArea: new Phaser.Geom.Circle(0, 0, hitRadius),
+      hitAreaCallback: Phaser.Geom.Circle.Contains,
+      useHandCursor: true,
+    });
+    this.setDepth(20);
 
     scene.add.existing(this);
 
@@ -45,8 +51,31 @@ export class Sun extends Phaser.GameObjects.Container {
   private drawSunFallback(): void {
     if (!this.graphics) return;
     this.graphics.clear();
-    this.graphics.fillStyle(0xffff00, 1);
-    this.graphics.fillCircle(0, 0, 20);
+    this.graphics.fillStyle(0xffe033, 1);
+    this.graphics.fillCircle(0, 0, 22);
+  }
+
+  /** Classic PvZ: pop at the plant, arc up, then drop a short way and rest. */
+  public playSunflowerEject(): void {
+    const originY = this.y;
+    const peakY = originY - 62;
+    const restY = originY - 18;
+
+    this.scene.tweens.add({
+      targets: this,
+      y: peakY,
+      duration: 380,
+      ease: 'Quad.easeOut',
+      onComplete: () => {
+        if (this.collected || !this.active) return;
+        this.scene.tweens.add({
+          targets: this,
+          y: restY,
+          duration: 280,
+          ease: 'Quad.easeIn',
+        });
+      },
+    });
   }
 
   public update(delta: number): void {
@@ -61,6 +90,7 @@ export class Sun extends Phaser.GameObjects.Container {
   public collect(onComplete: () => void): void {
     if (this.collected) return;
     this.collected = true;
+    this.scene.tweens.killTweensOf(this);
 
     this.scene.tweens.add({
       targets: this,

@@ -529,7 +529,6 @@ export class GameScene extends Phaser.Scene {
     const targetY = Phaser.Math.Between(GRID_START_Y, GRID_START_Y + GRID_ROWS * TILE_HEIGHT);
     
     const sun = new Sun(this, x, startY, SKY_SUN_AMOUNT, true, targetY);
-    sun.setInteractive();
     sun.on('pointerdown', () => {
       this.collectSun(sun);
     });
@@ -546,7 +545,7 @@ export class GameScene extends Phaser.Scene {
         }
         
         const sun = new Sun(this, plant.x, plant.y, SUNFLOWER_SUN_AMOUNT);
-        sun.setInteractive();
+        sun.playSunflowerEject();
         sun.on('pointerdown', () => {
           this.collectSun(sun);
         });
