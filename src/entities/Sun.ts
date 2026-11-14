@@ -1,15 +1,14 @@
 import Phaser from 'phaser';
+import { ASSET_MANIFEST } from '../config/assets';
 
-const SUN_RADIUS = 22;
-const SUN_RAY_COUNT = 12;
-const SUN_RAY_LENGTH = 14;
-const SUN_RAY_WIDTH = 5;
+const COLLECTIBLE_SUN_SIZE = 52;
 
 export class Sun extends Phaser.GameObjects.Container {
   public value: number;
   public isFromSky: boolean;
   public targetY: number;
-  private graphics: Phaser.GameObjects.Graphics;
+  private sprite?: Phaser.GameObjects.Image;
+  private graphics?: Phaser.GameObjects.Graphics;
   private collected: boolean = false;
   private fallSpeed: number = 50;
 
@@ -20,9 +19,17 @@ export class Sun extends Phaser.GameObjects.Container {
     this.isFromSky = isFromSky;
     this.targetY = targetY ?? y;
 
-    this.graphics = scene.add.graphics();
-    this.drawSun();
-    this.add(this.graphics);
+    const sunKey = ASSET_MANIFEST.sun.key;
+    if (scene.textures.exists(sunKey)) {
+      this.sprite = scene.add.image(0, 0, sunKey);
+      const scale = COLLECTIBLE_SUN_SIZE / Math.max(this.sprite.width, this.sprite.height);
+      this.sprite.setScale(scale);
+      this.add(this.sprite);
+    } else {
+      this.graphics = scene.add.graphics();
+      this.drawSunFallback();
+      this.add(this.graphics);
+    }
 
     const hitRadius = 34;
     const hitArea = new Phaser.Geom.Circle(0, 0, hitRadius);
@@ -37,33 +44,11 @@ export class Sun extends Phaser.GameObjects.Container {
     });
   }
 
-  private drawSun(): void {
+  private drawSunFallback(): void {
+    if (!this.graphics) return;
     this.graphics.clear();
-    this.graphics.lineStyle(SUN_RAY_WIDTH, 0xffd200, 1);
-
-    for (let i = 0; i < SUN_RAY_COUNT; i++) {
-      const angle = (i / SUN_RAY_COUNT) * Math.PI * 2 - Math.PI / 2;
-      const innerX = Math.cos(angle) * (SUN_RADIUS + 4);
-      const innerY = Math.sin(angle) * (SUN_RADIUS + 4);
-      const outerX = Math.cos(angle) * (SUN_RADIUS + SUN_RAY_LENGTH);
-      const outerY = Math.sin(angle) * (SUN_RADIUS + SUN_RAY_LENGTH);
-      this.graphics.lineBetween(innerX, innerY, outerX, outerY);
-    }
-
     this.graphics.fillStyle(0xffe033, 1);
-    this.graphics.fillCircle(0, 0, SUN_RADIUS);
-
-    this.graphics.fillStyle(0xffc800, 1);
-    this.graphics.fillCircle(0, 0, SUN_RADIUS - 5);
-
-    this.graphics.fillStyle(0x5a3a10, 1);
-    this.graphics.fillEllipse(-7, -4, 5, 7);
-    this.graphics.fillEllipse(7, -4, 5, 7);
-
-    this.graphics.lineStyle(2.5, 0x5a3a10, 1);
-    this.graphics.beginPath();
-    this.graphics.arc(0, 6, 9, 0.15, Math.PI - 0.15, false);
-    this.graphics.strokePath();
+    this.graphics.fillCircle(0, 0, 22);
   }
 
   /** Classic PvZ: pop at the plant, arc up, then drop a short way and rest. */
