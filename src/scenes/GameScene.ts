@@ -58,7 +58,12 @@ import {
   HUD_SHOVEL_HIT_PAD_X,
   HUD_SHOVEL_HIT_PAD_Y,
 } from '../config/constants';
-import { ASSET_MANIFEST, PACKET_TEXTURE_KEYS, PLANT_TEXTURE_KEYS } from '../config/assets';
+import {
+  ASSET_MANIFEST,
+  PACKET_TEXTURE_KEYS,
+  PLANT_TEXTURE_KEYS,
+  loadGameplayAssets,
+} from '../config/assets';
 
 export class GameScene extends Phaser.Scene {
   private currentLevel!: LevelConfig;
@@ -175,6 +180,10 @@ export class GameScene extends Phaser.Scene {
         this.grid[row][col] = null;
       }
     }
+  }
+
+  preload(): void {
+    loadGameplayAssets(this);
   }
 
   create(): void {

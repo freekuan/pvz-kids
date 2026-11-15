@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { ASSET_MANIFEST } from '../config/assets';
+import { ASSET_MANIFEST, loadGameplayAssets } from '../config/assets';
 
 /** Center lawn band between foreground characters — UI overlay anchor. */
 const CENTER_X = 640;
@@ -99,5 +99,9 @@ export class TitleScene extends Phaser.Scene {
 
     // Lift UI above background art.
     [title, dedicationEn, dedicationZh, btn, startLabel].forEach((obj) => obj.setDepth(2));
+
+    // Preload gameplay assets silently in the background while on TitleScene
+    loadGameplayAssets(this);
+    this.load.start();
   }
 }

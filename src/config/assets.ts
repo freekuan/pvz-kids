@@ -67,20 +67,37 @@ export const PACKET_TEXTURE_KEYS: Record<string, string> = {
   snowflake: ASSET_MANIFEST.packets.snowflake.key,
 };
 
-export function loadGameAssets(scene: Phaser.Scene): void {
-  const m = ASSET_MANIFEST;
-  scene.load.image(m.titleScreen.key, m.titleScreen.url);
-  scene.load.image(m.houseSidewalk.key, m.houseSidewalk.url);
-  scene.load.image(m.lawnLight.key, m.lawnLight.url);
-  scene.load.image(m.lawnDark.key, m.lawnDark.url);
-  scene.load.image(m.seedBar.key, m.seedBar.url);
-  scene.load.image(m.sunCounter.key, m.sunCounter.url);
-  scene.load.image(m.sun.key, m.sun.url);
-  scene.load.image(m.pea.key, m.pea.url);
-  scene.load.image(m.shovel.key, m.shovel.url);
-  scene.load.image(m.lawnmower.key, m.lawnmower.url);
+function queueImageIfMissing(scene: Phaser.Scene, key: string, url: string): void {
+  if (!scene.textures.exists(key)) {
+    scene.load.image(key, url);
+  }
+}
 
-  Object.values(m.plants).forEach((a) => scene.load.image(a.key, a.url));
-  Object.values(m.zombies).forEach((a) => scene.load.image(a.key, a.url));
-  Object.values(m.packets).forEach((a) => scene.load.image(a.key, a.url));
+/** Stage 1: minimal assets required to show TitleScene immediately. */
+export function loadTitleAssets(scene: Phaser.Scene): void {
+  const m = ASSET_MANIFEST;
+  queueImageIfMissing(scene, m.titleScreen.key, m.titleScreen.url);
+}
+
+/** Stage 2: gameplay assets preloaded in the background during TitleScene (or on GameScene entry). */
+export function loadGameplayAssets(scene: Phaser.Scene): void {
+  const m = ASSET_MANIFEST;
+  queueImageIfMissing(scene, m.houseSidewalk.key, m.houseSidewalk.url);
+  queueImageIfMissing(scene, m.lawnLight.key, m.lawnLight.url);
+  queueImageIfMissing(scene, m.lawnDark.key, m.lawnDark.url);
+  queueImageIfMissing(scene, m.seedBar.key, m.seedBar.url);
+  queueImageIfMissing(scene, m.sunCounter.key, m.sunCounter.url);
+  queueImageIfMissing(scene, m.sun.key, m.sun.url);
+  queueImageIfMissing(scene, m.pea.key, m.pea.url);
+  queueImageIfMissing(scene, m.shovel.key, m.shovel.url);
+  queueImageIfMissing(scene, m.lawnmower.key, m.lawnmower.url);
+
+  Object.values(m.plants).forEach((a) => queueImageIfMissing(scene, a.key, a.url));
+  Object.values(m.zombies).forEach((a) => queueImageIfMissing(scene, a.key, a.url));
+  Object.values(m.packets).forEach((a) => queueImageIfMissing(scene, a.key, a.url));
+}
+
+export function loadGameAssets(scene: Phaser.Scene): void {
+  loadTitleAssets(scene);
+  loadGameplayAssets(scene);
 }
