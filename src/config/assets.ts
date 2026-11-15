@@ -13,8 +13,12 @@ export const ASSET_MANIFEST = {
   plants: {
     sunflower: { key: 'sunflower', url: 'assets/plants/sunflower.png' },
     peashooter: { key: 'peashooter', url: 'assets/plants/peashooter.png' },
+    snowpea: { key: 'snowpea', url: 'assets/plants/snowpea.png' },
+    repeater: { key: 'repeater', url: 'assets/plants/repeater.png' },
     wallnut: { key: 'wallnut', url: 'assets/plants/wallnut.png' },
     cherrybomb: { key: 'cherrybomb', url: 'assets/plants/cherrybomb.png' },
+    potatomine: { key: 'potatomine', url: 'assets/plants/potatomine.png' },
+    plantern: { key: 'plantern', url: 'assets/plants/plantern.png' },
   },
   zombies: {
     normal: { key: 'zombie_normal', url: 'assets/zombies/normal.png' },
@@ -24,16 +28,25 @@ export const ASSET_MANIFEST = {
   packets: {
     sunflower: { key: 'packet_sunflower', url: 'assets/ui/packet_sunflower.png' },
     peashooter: { key: 'packet_peashooter', url: 'assets/ui/packet_peashooter.png' },
+    snowpea: { key: 'packet_snowpea', url: 'assets/ui/packet_snowpea.png' },
+    repeater: { key: 'packet_repeater', url: 'assets/ui/packet_repeater.png' },
     wallnut: { key: 'packet_wallnut', url: 'assets/ui/packet_wallnut.png' },
     cherrybomb: { key: 'packet_cherrybomb', url: 'assets/ui/packet_cherrybomb.png' },
+    potatomine: { key: 'packet_potatomine', url: 'assets/ui/packet_potatomine.png' },
+    plantern: { key: 'packet_plantern', url: 'assets/ui/packet_plantern.png' },
+    snowflake: { key: 'packet_snowflake', url: 'assets/ui/packet_snowflake.png' },
   },
 } as const;
 
 export const PLANT_TEXTURE_KEYS: Record<string, string> = {
   sunflower: ASSET_MANIFEST.plants.sunflower.key,
   peashooter: ASSET_MANIFEST.plants.peashooter.key,
+  snowpea: ASSET_MANIFEST.plants.snowpea.key,
+  repeater: ASSET_MANIFEST.plants.repeater.key,
   wallnut: ASSET_MANIFEST.plants.wallnut.key,
   cherrybomb: ASSET_MANIFEST.plants.cherrybomb.key,
+  potatomine: ASSET_MANIFEST.plants.potatomine.key,
+  plantern: ASSET_MANIFEST.plants.plantern.key,
 };
 
 export const ZOMBIE_TEXTURE_KEYS: Record<string, string> = {
@@ -45,8 +58,13 @@ export const ZOMBIE_TEXTURE_KEYS: Record<string, string> = {
 export const PACKET_TEXTURE_KEYS: Record<string, string> = {
   sunflower: ASSET_MANIFEST.packets.sunflower.key,
   peashooter: ASSET_MANIFEST.packets.peashooter.key,
+  snowpea: ASSET_MANIFEST.packets.snowpea.key,
+  repeater: ASSET_MANIFEST.packets.repeater.key,
   wallnut: ASSET_MANIFEST.packets.wallnut.key,
   cherrybomb: ASSET_MANIFEST.packets.cherrybomb.key,
+  potatomine: ASSET_MANIFEST.packets.potatomine.key,
+  plantern: ASSET_MANIFEST.packets.plantern.key,
+  snowflake: ASSET_MANIFEST.packets.snowflake.key,
 };
 
 export function loadGameAssets(scene: Phaser.Scene): void {

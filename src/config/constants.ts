@@ -2,7 +2,7 @@
 export const GRID_COLS = 9;
 export const GRID_ROWS = 5;
 export const GRID_START_X = 335;
-export const GRID_START_Y = 200;
+export const GRID_START_Y = 218;
 export const HOUSE_CENTER_X = 168;
 export const TILE_WIDTH = 100;
 export const TILE_HEIGHT = 100;
@@ -17,7 +17,7 @@ export const HUD_BAR_SRC_WIDTH = 1224;
 export const HUD_BAR_SRC_HEIGHT = 202;
 /** Right of the mower column (`GRID_START_X - 80` + mower art). */
 export const HUD_BAR_LEFT_X = GRID_START_X - 80 + 74;
-export const HUD_CLEARANCE_ABOVE_LAWN = 10;
+export const HUD_CLEARANCE_ABOVE_LAWN = 34;
 export const HUD_TOP_MARGIN = 4;
 /** Packet display height as a multiple of the scaled bar height (preview proportions). */
 export const HUD_PACKET_BAR_RATIO = 1.1;
@@ -42,9 +42,14 @@ export const HUD_SHOVEL_HIT_PAD_Y = 24;
 // Game balance
 export const INITIAL_SUN = 150;
 export const SKY_SUN_AMOUNT = 25;
-export const SKY_SUN_INTERVAL = 8000; // ms
+export const SKY_SUN_INTERVAL = 7000; // ms
 export const SUNFLOWER_SUN_AMOUNT = 50;
 export const SUNFLOWER_SUN_INTERVAL = 12000; // ms
+export const PEA_SHOOT_INTERVAL = 1400; // ms
+
+// Wave pacing
+export const WAVE_ADVANCE_HP_RATIO = 0.35; // advance when wave remaining HP <= 35%
+export const WAVE_MAX_WAIT_MS = 32000; // fallback max time before advancing wave
 
 // Plant data
 export interface PlantData {
@@ -77,7 +82,7 @@ export const PLANT_TYPES: Record<string, PlantData> = {
     type: 'wallnut',
     name: 'Nut',
     sunCost: 50,
-    cooldown: 20000,
+    cooldown: 15000,
     hp: 4000,
     description: 'Blocks zombies',
   },
@@ -85,9 +90,49 @@ export const PLANT_TYPES: Record<string, PlantData> = {
     type: 'cherrybomb',
     name: 'Cherry',
     sunCost: 150,
-    cooldown: 30000,
+    cooldown: 25000,
     hp: 300,
     description: 'Explodes 3x3',
+  },
+  snowpea: {
+    type: 'snowpea',
+    name: 'Snow Pea',
+    sunCost: 175,
+    cooldown: 7500,
+    hp: 300,
+    description: 'Slows zombies',
+  },
+  repeater: {
+    type: 'repeater',
+    name: 'Repeater',
+    sunCost: 200,
+    cooldown: 7500,
+    hp: 300,
+    description: 'Shoots 2 peas',
+  },
+  potatomine: {
+    type: 'potatomine',
+    name: 'Mine',
+    sunCost: 25,
+    cooldown: 20000,
+    hp: 300,
+    description: 'Explodes on contact',
+  },
+  plantern: {
+    type: 'plantern',
+    name: 'Plantern',
+    sunCost: 25,
+    cooldown: 15000,
+    hp: 300,
+    description: 'Boosts 3x3 plants',
+  },
+  snowflake: {
+    type: 'snowflake',
+    name: 'Snowflake',
+    sunCost: 125,
+    cooldown: 30000,
+    hp: 300,
+    description: 'Blizzard AoE',
   },
 };
 
@@ -113,7 +158,7 @@ export const ZOMBIE_TYPES: Record<string, ZombieData> = {
   conehead: {
     type: 'conehead',
     name: 'Conehead',
-    hp: 640,
+    hp: 560,
     speed: 20,
     damage: 100,
     attackSpeed: 1500,
@@ -121,7 +166,7 @@ export const ZOMBIE_TYPES: Record<string, ZombieData> = {
   buckethead: {
     type: 'buckethead',
     name: 'Buckethead',
-    hp: 1370,
+    hp: 1100,
     speed: 20,
     damage: 100,
     attackSpeed: 1500,
@@ -133,9 +178,9 @@ export const PEA_DAMAGE = 20;
 export const PEA_SPEED = 300;
 /** Pea sprite display size. */
 export const PEA_DISPLAY_SIZE = 22;
-/** Mouth position on peashooter.png (528×512), measured from sprite center / top. */
-export const PEASHOOTER_MOUTH_X_OF_WIDTH = 0.332;
-export const PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP = 0.408;
+/** Mouth position on peashooter.png (206×200), measured from sprite center X / top Y. */
+export const PEASHOOTER_MOUTH_X_OF_WIDTH = 0.465;
+export const PEASHOOTER_MOUTH_Y_OF_HEIGHT_FROM_TOP = 0.305;
 export const SUN_COLLECT_HIT_RADIUS = 48;
 export const SUN_DEPTH = 50;
 
@@ -143,6 +188,18 @@ export const SUN_DEPTH = 50;
 export const CHERRY_DAMAGE = 1800;
 export const CHERRY_EXPLODE_DELAY = 1000;
 export const CHERRY_RANGE = 1.5; // in tiles
+
+// Snow pea, Potato mine & Plantern
+export const SNOW_PEA_SLOW_FACTOR = 0.5;
+export const SNOW_PEA_SLOW_DURATION = 4000; // ms
+export const POTATO_ARM_TIME = 4000; // ms
+export const POTATO_DAMAGE = 1800;
+export const PLANTERN_BUFF_RANGE = 1; // 3x3 grid radius
+export const PLANTERN_SPEED_BOOST = 1.35; // +35% attack & sun speed in 3x3 aura
+export const SNOWFLAKE_DURATION = 5000; // ms
+export const SNOWFLAKE_TICK_INTERVAL = 500; // ms
+export const SNOWFLAKE_TICK_DAMAGE = 15;
+export const GAME_SPEED_OPTIONS = [1, 1.25, 1.5, 2] as const;
 
 // Lawn mower
 export const MOWER_SPEED = 400;

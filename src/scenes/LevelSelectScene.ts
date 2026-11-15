@@ -25,14 +25,19 @@ export class LevelSelectScene extends Phaser.Scene {
     // Get unlocked levels from localStorage
     const unlockedLevels = this.getUnlockedLevels();
 
-    // Level buttons
-    const startX = width / 2 - 250;
-    const startY = height / 2;
-    const spacing = 140;
+    // Level buttons (4 columns × 2 rows)
+    const cols = 4;
+    const colSpacing = 165;
+    const rowSpacing = 155;
+    const rows = Math.ceil(LEVELS.length / cols);
+    const startX = width / 2 - ((cols - 1) * colSpacing) / 2;
+    const startY = height / 2 - ((rows - 1) * rowSpacing) / 2 + 10;
 
     LEVELS.forEach((level, index) => {
-      const x = startX + (index % 5) * spacing;
-      const y = startY;
+      const col = index % cols;
+      const row = Math.floor(index / cols);
+      const x = startX + col * colSpacing;
+      const y = startY + row * rowSpacing;
 
       const isUnlocked = index < unlockedLevels;
       const buttonColor = isUnlocked ? 0x32CD32 : 0x808080;
@@ -127,7 +132,6 @@ export class LevelSelectScene extends Phaser.Scene {
   }
 
   private getUnlockedLevels(): number {
-    const saved = localStorage.getItem('pvz_unlocked_levels');
-    return saved ? parseInt(saved) : 1;
+    return LEVELS.length;
   }
 }

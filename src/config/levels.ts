@@ -9,163 +9,516 @@ export interface LevelConfig {
   name: string;
   waves: Wave[][];
   availablePlants: string[];
-  /** Ms of prep before the first wave (levels 1–3 use clear-between-waves pacing). */
-  prepTimeMs?: number;
-  /** Ms rest after a wave is fully spawned and all its zombies are dead. */
-  restTimeMs?: number;
+  /** Ms of prep before the first wave starts. */
+  prepTimeMs: number;
+  /** Ms rest after a wave's threshold is cleared before starting the next wave. */
+  restTimeMs: number;
+}
+
+/**
+ * Helper to stagger zombies in a wave with even spacing so they don't clump
+ * on top of each other, while keeping lane variety.
+ */
+function buildWave(
+  entries: Array<{ zombieType: string; lane: number; delay?: number }>,
+  defaultIntervalMs: number
+): Wave[] {
+  return entries.map((entry, idx) => ({
+    zombieType: entry.zombieType,
+    lane: entry.lane,
+    delay: entry.delay ?? idx * defaultIntervalMs,
+  }));
 }
 
 export const LEVELS: LevelConfig[] = [
   {
     level: 1,
     name: 'Level 1',
-    prepTimeMs: 30_000,
-    restTimeMs: 10_000,
+    prepTimeMs: 16_000,
+    restTimeMs: 6_000,
     availablePlants: ['sunflower', 'peashooter'],
     waves: [
-      [{ zombieType: 'normal', lane: 2, delay: 0 }],
-      [
-        { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'normal', lane: 3, delay: 8_000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 2, delay: 5_000 },
-        { zombieType: 'normal', lane: 4, delay: 10_000 },
-      ],
+      buildWave([{ zombieType: 'normal', lane: 2 }], 0),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'normal', lane: 3 },
+        ],
+        6_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'normal', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        4_500
+      ),
     ],
   },
   {
     level: 2,
     name: 'Level 2',
-    prepTimeMs: 25_000,
-    restTimeMs: 8_000,
+    prepTimeMs: 18_000,
+    restTimeMs: 6_000,
     availablePlants: ['sunflower', 'peashooter', 'wallnut'],
     waves: [
-      [{ zombieType: 'normal', lane: 2, delay: 0 }],
-      [
-        { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'conehead', lane: 3, delay: 8_000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 2, delay: 6_000 },
-        { zombieType: 'conehead', lane: 4, delay: 12_000 },
-      ],
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        7_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        5_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 4 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'normal', lane: 3 },
+          { zombieType: 'normal', lane: 0 },
+        ],
+        4_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 4 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        3_500
+      ),
     ],
   },
   {
     level: 3,
     name: 'Level 3',
-    prepTimeMs: 25_000,
-    restTimeMs: 8_000,
+    prepTimeMs: 18_000,
+    restTimeMs: 6_500,
     availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb'],
     waves: [
-      [{ zombieType: 'normal', lane: 2, delay: 0 }],
-      [
-        { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'conehead', lane: 3, delay: 8_000 },
-      ],
-      [
-        { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 2, delay: 10_000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 1, delay: 0 },
-        { zombieType: 'normal', lane: 3, delay: 6_000 },
-        { zombieType: 'conehead', lane: 4, delay: 12_000 },
-        { zombieType: 'buckethead', lane: 0, delay: 18_000 },
-      ],
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'normal', lane: 3 },
+        ],
+        6_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        5_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        4_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        3_200
+      ),
     ],
   },
   {
     level: 4,
     name: 'Level 4',
-    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb'],
+    prepTimeMs: 20_000,
+    restTimeMs: 7_000,
+    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb', 'snowpea'],
     waves: [
-      [
-        { zombieType: 'conehead', lane: 1, delay: 0 },
-        { zombieType: 'conehead', lane: 3, delay: 0 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 0, delay: 0 },
-        { zombieType: 'normal', lane: 2, delay: 500 },
-        { zombieType: 'buckethead', lane: 4, delay: 1000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'conehead', lane: 3, delay: 1500 },
-        { zombieType: 'normal', lane: 4, delay: 2000 },
-      ],
-      [
-        { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'buckethead', lane: 3, delay: 1500 },
-        { zombieType: 'conehead', lane: 4, delay: 2000 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'buckethead', lane: 3, delay: 1500 },
-        { zombieType: 'buckethead', lane: 4, delay: 2000 },
-      ],
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'conehead', lane: 3 },
+        ],
+        6_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'conehead', lane: 4 },
+        ],
+        4_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        3_800
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'buckethead', lane: 3 },
+        ],
+        3_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        2_500
+      ),
     ],
   },
   {
     level: 5,
     name: 'Level 5',
-    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb'],
+    prepTimeMs: 20_000,
+    restTimeMs: 7_000,
+    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb', 'snowpea', 'repeater'],
     waves: [
-      [
-        { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 2, delay: 0 },
-        { zombieType: 'conehead', lane: 4, delay: 0 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 1, delay: 0 },
-        { zombieType: 'conehead', lane: 2, delay: 500 },
-        { zombieType: 'buckethead', lane: 3, delay: 1000 },
-      ],
-      [
-        { zombieType: 'normal', lane: 0, delay: 0 },
-        { zombieType: 'conehead', lane: 0, delay: 500 },
-        { zombieType: 'buckethead', lane: 1, delay: 1000 },
-        { zombieType: 'buckethead', lane: 2, delay: 1500 },
-        { zombieType: 'buckethead', lane: 3, delay: 2000 },
-        { zombieType: 'conehead', lane: 4, delay: 2500 },
-        { zombieType: 'normal', lane: 4, delay: 3000 },
-      ],
-      [
-        { zombieType: 'conehead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 1, delay: 500 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-        { zombieType: 'buckethead', lane: 3, delay: 1500 },
-        { zombieType: 'conehead', lane: 4, delay: 2000 },
-        { zombieType: 'normal', lane: 2, delay: 2500 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 1, delay: 300 },
-        { zombieType: 'buckethead', lane: 2, delay: 600 },
-        { zombieType: 'buckethead', lane: 3, delay: 900 },
-        { zombieType: 'buckethead', lane: 4, delay: 1200 },
-        { zombieType: 'conehead', lane: 0, delay: 1500 },
-        { zombieType: 'conehead', lane: 1, delay: 1800 },
-        { zombieType: 'conehead', lane: 3, delay: 2100 },
-        { zombieType: 'conehead', lane: 4, delay: 2400 },
-      ],
-      [
-        { zombieType: 'buckethead', lane: 0, delay: 0 },
-        { zombieType: 'buckethead', lane: 1, delay: 200 },
-        { zombieType: 'buckethead', lane: 2, delay: 400 },
-        { zombieType: 'buckethead', lane: 3, delay: 600 },
-        { zombieType: 'buckethead', lane: 4, delay: 800 },
-        { zombieType: 'buckethead', lane: 2, delay: 1000 },
-      ],
+      buildWave(
+        [
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'normal', lane: 3 },
+        ],
+        5_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        4_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        3_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        3_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        2_800
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 3 },
+          { zombieType: 'conehead', lane: 2 },
+        ],
+        2_000
+      ),
+    ],
+  },
+  {
+    level: 6,
+    name: 'Level 6',
+    prepTimeMs: 20_000,
+    restTimeMs: 6_500,
+    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb', 'snowpea', 'repeater', 'potatomine', 'plantern', 'snowflake'],
+    waves: [
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'normal', lane: 3 },
+          { zombieType: 'conehead', lane: 2 },
+        ],
+        4_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        3_600
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'normal', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+        ],
+        3_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        2_600
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+        ],
+        2_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'normal', lane: 4 },
+          { zombieType: 'normal', lane: 1 },
+        ],
+        1_800
+      ),
+    ],
+  },
+  {
+    level: 7,
+    name: 'Level 7',
+    prepTimeMs: 20_000,
+    restTimeMs: 6_000,
+    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb', 'snowpea', 'repeater', 'potatomine', 'plantern', 'snowflake'],
+    waves: [
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'conehead', lane: 4 },
+        ],
+        4_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'normal', lane: 0 },
+          { zombieType: 'normal', lane: 4 },
+        ],
+        3_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+        ],
+        2_800
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 2 },
+        ],
+        2_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'normal', lane: 3 },
+        ],
+        2_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        1_900
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        1_600
+      ),
+    ],
+  },
+  {
+    level: 8,
+    name: 'Level 8',
+    prepTimeMs: 20_000,
+    restTimeMs: 5_500,
+    availablePlants: ['sunflower', 'peashooter', 'wallnut', 'cherrybomb', 'snowpea', 'repeater', 'potatomine', 'plantern', 'snowflake'],
+    waves: [
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+        ],
+        3_800
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        3_000
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'conehead', lane: 2 },
+        ],
+        2_500
+      ),
+      buildWave(
+        [
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 3 },
+        ],
+        2_200
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'normal', lane: 2 },
+        ],
+        1_900
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'conehead', lane: 4 },
+        ],
+        1_700
+      ),
+      buildWave(
+        [
+          { zombieType: 'buckethead', lane: 0 },
+          { zombieType: 'buckethead', lane: 1 },
+          { zombieType: 'buckethead', lane: 2 },
+          { zombieType: 'buckethead', lane: 3 },
+          { zombieType: 'buckethead', lane: 4 },
+          { zombieType: 'conehead', lane: 0 },
+          { zombieType: 'conehead', lane: 1 },
+          { zombieType: 'conehead', lane: 2 },
+          { zombieType: 'conehead', lane: 3 },
+          { zombieType: 'conehead', lane: 4 },
+          { zombieType: 'buckethead', lane: 2 },
+        ],
+        1_400
+      ),
     ],
   },
 ];
